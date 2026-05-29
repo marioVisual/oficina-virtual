@@ -9,7 +9,7 @@ set -e
 
 INSTALL_DIR="$HOME/.claude-office"
 PLIST_FILE="$HOME/Library/LaunchAgents/com.visualnacert.claude-office.plist"
-REPO_URL="https://raw.githubusercontent.com/W17ant/Claude-Office/main"
+REPO_URL="https://raw.githubusercontent.com/marioVisual/oficina-virtual/main"
 GREEN='\033[0;32m'
 AMBER='\033[0;33m'
 RED='\033[0;31m'
