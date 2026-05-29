@@ -21,7 +21,7 @@ const LOCAL_PERSONA = process.env.OFFICE_NAME || os.userInfo().username;
 // ── CONFLUENCE CONFIG ─────────────────────────────────────────────────────────
 const CONFLUENCE = {
   cloudId:    "fb372880-3bb3-4382-a807-0d84045bbb5c",
-  repoPageId: "4534730825",
+  repoPageId: "4528308226",
   email:      process.env.ATLASSIAN_EMAIL,
   token:      process.env.ATLASSIAN_TOKEN,
 };
@@ -40,24 +40,52 @@ async function fetchPage(pageId) {
 function parseTable(html) {
   const agents = [];
   const rows = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-  const headerRow = rows[0] || "";
-  const hasDept = /departamento/i.test(headerRow);
+  if (rows.length === 0) return agents;
+
+  // Detect column positions from header
+  const headerCells = (rows[0].match(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi) || [])
+    .map(c => c.replace(/<[^>]+>/g,"").toLowerCase().trim());
+  const col = key => headerCells.findIndex(c => c.includes(key));
+
+  // Confluence table: Persona | Agente | Descripción | Página de detalle | Departamento
+  const iPersona = col("persona");
+  const iNombre  = col("agente");
+  const iDesc    = col("descripci");
+  const iDetalle = col("detalle") !== -1 ? col("detalle") : col("página");
+  const iDept    = col("departamento");
+
+  // Fallback to positional
+  const colPersona = iPersona !== -1 ? iPersona : 0;
+  const colNombre  = iNombre  !== -1 ? iNombre  : 1;
+  const colDesc    = iDesc    !== -1 ? iDesc    : 2;
+  const colDetalle = iDetalle !== -1 ? iDetalle : 3;
+  const colDept    = iDept    !== -1 ? iDept    : 4;
+
+  let lastPersona = "";
   for (const row of rows.slice(1)) {
     const cells = row.match(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi) || [];
-    if (cells.length < 5) continue;
-    const text = c => (c||"").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#\d+;/g," ").trim();
-    const nombre = text(cells[1]);
+    if (cells.length < 3) continue;
+    const text = c => (c||"").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#\d+;/g," ").replace(/\s+/g," ").trim();
+    const get = i => text(cells[i] || "");
+
+    const personaRaw = get(colPersona);
+    if (personaRaw) lastPersona = personaRaw;
+    const persona = lastPersona;
+
+    const nombre = get(colNombre);
     if (!nombre || nombre.length < 2) continue;
-    let departamento = "", url = null;
-    if (hasDept && cells.length >= 7) {
-      departamento = text(cells[5]);
-      const lm = (cells[6]||"").match(/href="([^"]+)"/);
-      url = lm ? lm[1] : null;
-    } else {
-      const lm = (cells[5]||"").match(/href="([^"]+)"/);
-      url = lm ? lm[1] : null;
-    }
-    agents.push({ persona:text(cells[0]), nombre, descripcion:text(cells[2]), herramientas:text(cells[3]), estado:text(cells[4]), departamento, url });
+
+    const linkMatch = (cells[colDetalle]||"").match(/href="([^"]+)"/);
+
+    agents.push({
+      persona,
+      nombre,
+      descripcion: get(colDesc),
+      herramientas: "",
+      estado: "Activo",
+      departamento: colDept < cells.length ? get(colDept) : "",
+      url: linkMatch ? linkMatch[1] : null,
+    });
   }
   return agents;
 }
@@ -347,6 +375,8 @@ app.get("/api/status", (_req,res) => res.json({
   confluenceAgents:confluenceAgents.length,
   confluenceConfigured:confluenceOk(),
   lastConfluenceFetch:lastConfluenceFetch?new Date(lastConfluenceFetch).toISOString():null,
+  officeName: process.env.OFFICE_NAME || os.userInfo().username,
+  atlassianEmail: CONFLUENCE.email || "",
 }));
 
 // Forzar sync manual desde la UI
@@ -403,23 +433,71 @@ wss.on("connection", ws => {
 });
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
+// ── SETUP ENDPOINT ───────────────────────────────────────────────────────────
+app.get("/api/setup-status", (_req, res) => {
+  res.json({ configured: !!(CONFLUENCE.email || process.env.ANTHROPIC_API_KEY || process.env.OFFICE_NAME) });
+});
+
+app.post("/api/setup", async (req, res) => {
+  const { name, email, token, anthKey } = req.body;
+  if (!name) return res.status(400).json({ error: "El nombre es obligatorio" });
+  try {
+    const envPath = path.join(__dirname, ".env");
+    const lines = [];
+    if (anthKey)  lines.push(`ANTHROPIC_API_KEY=${anthKey}`);
+    if (email)    lines.push(`ATLASSIAN_EMAIL=${email}`);
+    if (token)    lines.push(`ATLASSIAN_TOKEN=${token}`);
+    if (name)     lines.push(`OFFICE_NAME=${name}`);
+    fs.writeFileSync(envPath, lines.join("\n") + "\n", "utf8");
+
+    // Apply immediately without restart
+    if (anthKey)  process.env.ANTHROPIC_API_KEY = anthKey;
+    if (email)  { process.env.ATLASSIAN_EMAIL = email;  CONFLUENCE.email = email; }
+    if (token)  { process.env.ATLASSIAN_TOKEN = token;  CONFLUENCE.token = token; }
+    if (name)     process.env.OFFICE_NAME = name;
+
+    // Trigger sync with new credentials
+    if (confluenceOk()) {
+      syncLocalProjectsToConfluence().catch(console.error);
+      refreshConfluenceAgents().catch(console.error);
+    }
+
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Redirect to setup if no .env exists
+app.get("/", (req, res, next) => {
+  const envPath = path.join(__dirname, ".env");
+  if (!fs.existsSync(envPath)) {
+    return res.redirect("/setup.html");
+  }
+  next();
+});
+
 server.listen(PORT, async () => {
   console.log(`\n🏢 Claude Office → http://localhost:${PORT}`);
   console.log(`👤 Persona local: ${LOCAL_PERSONA}`);
 
-  if (!process.env.ANTHROPIC_API_KEY)
-    console.log(`⚠️  Chat desactivado. Añade ANTHROPIC_API_KEY al .env`);
-  else
-    console.log(`✅ Chat: OK`);
-
-  if (!confluenceOk()) {
-    console.log(`⚠️  Confluence desactivado. Añade ATLASSIAN_EMAIL y ATLASSIAN_TOKEN al .env`);
+  const envPath = path.join(__dirname, ".env");
+  if (!fs.existsSync(envPath)) {
+    console.log(`\n⚙️  Primera vez detectada — abriendo asistente de configuración...`);
+    try { require("open")(`http://localhost:${PORT}/setup.html`); } catch {}
   } else {
-    console.log(`🔄 Sincronizando proyectos locales con Confluence...`);
-    await syncLocalProjectsToConfluence(); // sync al arrancar
-    await refreshConfluenceAgents();        // carga cache
+    if (!process.env.ANTHROPIC_API_KEY)
+      console.log(`⚠️  Chat desactivado. Añade ANTHROPIC_API_KEY al .env`);
+    else
+      console.log(`✅ Chat: OK`);
+
+    if (!confluenceOk()) {
+      console.log(`⚠️  Confluence desactivado. Añade ATLASSIAN_EMAIL y ATLASSIAN_TOKEN al .env`);
+    } else {
+      console.log(`🔄 Sincronizando proyectos locales con Confluence...`);
+      await syncLocalProjectsToConfluence();
+      await refreshConfluenceAgents();
+    }
+    try { require("open")(`http://localhost:${PORT}`); } catch {}
   }
 
   startWatcher();
-  try { require("open")(`http://localhost:${PORT}`); } catch {}
 });
