@@ -6,8 +6,8 @@
 <title>Claude Office — VisualNacert</title>
 <style>
 :root{
-  --bg:#07080d;--bg2:#0b0d14;--bg3:#0f1220;--inp:#161826;
-  --b:#1c2038;--bhi:#2c3055;
+  --bg:#0a0b0f;--bg2:#0e1018;--bg3:#13151f;--inp:#1a1d2a;
+  --b:#1e2235;--bhi:#2c3055;
   --green:#1adb8a;--blue:#4a8fff;--amber:#f0a020;--red:#e24b4a;
   --purple:#a78bfa;--cyan:#22d3ee;--pink:#f472b6;
   --text:#e2e5f0;--dim:#4a5070;--mid:#8890b0;
@@ -15,8 +15,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;display:flex;flex-direction:column}
-
-/* TOPBAR */
 #topbar{height:30px;background:#05060b;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0;z-index:100}
 .dots{display:flex;gap:5px}.dot{width:10px;height:10px;border-radius:50%}
 #t-title{font-size:9px;color:var(--dim);letter-spacing:3px}
@@ -24,156 +22,50 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #live-badge{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--green)}
 .pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 #cfg-btn{font-size:8px;color:var(--dim);text-decoration:none;padding:2px 7px;border:0.5px solid var(--b);border-radius:8px}
-#cfg-btn:hover{color:var(--text)}
-
-/* MAIN */
 #main{display:flex;flex:1;overflow:hidden;min-height:0}
-
-/* LEFT NAV */
 #dept-nav{width:148px;background:#05060b;border-right:1px solid var(--b);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-#dept-nav-title{font-size:7px;color:var(--dim);letter-spacing:2px;padding:10px 12px 6px;text-transform:uppercase}
-.dept-all{display:flex;align-items:center;gap:7px;padding:7px 12px 10px;cursor:pointer;border:none;background:transparent;width:100%;font-family:'Courier New',monospace;border-bottom:1px solid var(--b);margin-bottom:4px}
-.dept-all:hover{background:var(--bg3)}
-.dept-all.sel{background:var(--bg3)}
-.dept-all span{font-size:9px;color:var(--green)}
-.dept-btn{display:flex;align-items:center;gap:7px;padding:7px 12px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Courier New',monospace;border-left:2px solid transparent;transition:all .1s}
-.dept-btn:hover{background:var(--bg3)}
-.dept-btn.sel{background:var(--bg3);border-left-color:var(--dc)}
-.d-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.d-name{font-size:9px;color:var(--mid);flex:1}
-.d-name.hi{color:var(--text);font-weight:bold}
-.d-cnt{font-size:7px;color:var(--dim)}
-
-/* CENTER: office */
-#office-wrap{flex:1;position:relative;overflow:hidden;background:#08091a;min-width:0}
-
-/* OVERVIEW */
-#overview{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:20px}
-#overview-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:1200px}
-.room-card{
-  cursor:pointer;border-radius:10px;overflow:hidden;
-  border:1px solid rgba(255,255,255,0.08);
-  transition:transform .18s, box-shadow .18s;
-  position:relative;flex-shrink:0;
-}
-.room-card:hover{transform:scale(1.04);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
-.room-card-img{width:280px;height:180px;object-fit:cover;display:block;image-rendering:pixelated}
-.room-card-fallback{width:280px;height:180px;display:flex;align-items:center;justify-content:center;font-size:40px}
-.room-card-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(5,6,11,0.88);padding:8px 12px;display:flex;align-items:center;justify-content:space-between}
-.room-card-name{font-size:10px;font-weight:bold;letter-spacing:1px}
-.room-card-cnt{font-size:9px;color:var(--mid)}
-.room-card-dots{position:absolute;top:8px;right:8px;display:flex;gap:3px;flex-wrap:wrap;max-width:60px}
-.room-dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 4px currentColor}
-
-/* ROOM VIEW */
-#room-view{
-  position:absolute;inset:0;
-  display:none;
-  flex-direction:column;
-  background:#08091a;
-}
-#room-view.on{display:flex}
-#room-scene{
-  flex:1;position:relative;overflow:hidden;min-height:0;
-}
-#room-bg-img{
-  position:absolute;inset:0;width:100%;height:100%;
-  object-fit:cover;image-rendering:pixelated;
-  display:none;
-}
-#room-bg-img.on{display:block}
-#room-bg-fallback{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-}
-#room-bg-fallback.hidden{display:none}
-#sprites-layer{
-  position:absolute;inset:0;
-  /* agents rendered here */
-}
-#room-topbar{
-  position:absolute;top:10px;left:10px;z-index:20;
-  display:flex;align-items:center;gap:8px;
-}
-#back-btn{
-  font-size:9px;color:var(--text);background:rgba(5,6,11,0.92);
-  border:0.5px solid var(--bhi);border-radius:6px;padding:5px 12px;
-  cursor:pointer;font-family:'Courier New',monospace;
-}
-#back-btn:hover{background:var(--bg3)}
-#room-label{font-size:11px;font-weight:bold;padding:5px 14px;border-radius:6px;background:rgba(5,6,11,0.88);border:0.5px solid}
-
-/* AGENT INFO PANEL */
-#ap{
-  position:absolute;left:10px;bottom:10px;width:300px;
-  background:rgba(5,6,11,0.97);border:1px solid var(--bhi);
-  border-radius:10px;padding:14px 16px;
-  display:none;z-index:30;backdrop-filter:blur(8px)
-}
+#nav-title{font-size:7px;color:var(--dim);letter-spacing:2px;padding:10px 12px 6px;text-transform:uppercase}
+.dept-btn{display:flex;align-items:center;gap:7px;padding:6px 12px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Courier New',monospace;border-left:2px solid transparent;transition:all .1s}
+.dept-btn:hover{background:var(--bg3)}.dept-btn.active{background:var(--bg3);border-left-color:var(--dc)}
+.d-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}.d-name{font-size:9px;color:var(--mid);flex:1}.d-name.hi{color:var(--text);font-weight:bold}.d-cnt{font-size:7px;color:var(--dim)}
+#zoom-controls{padding:8px 12px;border-top:1px solid var(--b);display:flex;gap:4px;margin-top:auto;flex-shrink:0}
+.zoom-btn{flex:1;padding:4px;background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;color:var(--mid);cursor:pointer;font-size:11px;font-family:monospace}
+.zoom-btn:hover{color:var(--text);border-color:var(--bhi)}
+#office-wrap{flex:1;position:relative;overflow:hidden;background:#1a2410}
+#map-canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;cursor:grab}
+#map-canvas:active{cursor:grabbing}
+#conn-badge{position:absolute;top:8px;right:10px;font-size:8px;padding:3px 9px;border-radius:8px;background:rgba(5,6,11,0.9);border:0.5px solid var(--b);z-index:10}
+#conn-badge.ok{color:var(--green);border-color:#0a4a30}.#conn-badge.err{color:var(--red);border-color:var(--red)}
+#ap{position:absolute;left:10px;bottom:10px;width:280px;background:rgba(5,6,11,0.97);border:1px solid var(--bhi);border-radius:10px;padding:14px 16px;display:none;z-index:20;backdrop-filter:blur(8px)}
 #ap.on{display:block}
 #ap-dept{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;font-weight:bold}
 #ap-name{font-size:13px;font-weight:bold;margin-bottom:3px}
 #ap-persona{font-size:9px;color:var(--mid);margin-bottom:8px}
 #ap-desc{font-size:10px;color:var(--mid);line-height:1.7;margin-bottom:6px}
+#ap-status{font-size:9px;margin-bottom:4px}
 #ap-link{font-size:9px;color:var(--blue);text-decoration:none;display:none}
-#ap-link:hover{text-decoration:underline}
 #ap-close{position:absolute;top:10px;right:12px;cursor:pointer;color:var(--dim);background:none;border:none;font-size:16px}
-
-/* AGENT SPRITES */
-.agent-wrap{
-  position:absolute;
-  cursor:pointer;
-  text-align:center;
-  transform:translate(-50%,-100%);
-  transition:filter .15s;
-  z-index:10;
-}
-.agent-wrap:hover .agent-img{filter:brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,0.4))}
-.agent-wrap.sel .agent-img{filter:drop-shadow(0 0 12px var(--glow)) brightness(1.1)}
-.agent-wrap:not(.sel).dimmed .agent-img{filter:brightness(0.5)}
-.agent-img{
-  display:block;
-  image-rendering:pixelated;
-  margin:0 auto;
-  animation:bob 2.5s ease-in-out infinite;
-}
-.agent-img:nth-of-type(2n){animation-delay:.8s}
-.agent-name{
-  display:inline-block;font-size:8px;font-family:'Courier New',monospace;
-  font-weight:bold;padding:2px 6px;border-radius:3px;
-  background:rgba(5,6,11,0.88);border:0.5px solid;
-  white-space:nowrap;margin-top:4px;
-}
-
-/* CHAT */
 #sidebar{width:280px;display:flex;flex-direction:column;background:#07080d;border-left:1px solid var(--b);flex-shrink:0}
 #chat-hdr{padding:10px 12px;border-bottom:1px solid var(--b);background:#05060b;flex-shrink:0}
-#chat-hdr span{font-size:10px;font-weight:bold}
-#chat-hdr p{font-size:8px;color:var(--dim);margin-top:2px}
+#chat-hdr span{font-size:10px;font-weight:bold}#chat-hdr p{font-size:8px;color:var(--dim);margin-top:2px}
 #messages{flex:1;overflow-y:auto;padding:10px 10px 4px;display:flex;flex-direction:column}
 .msg{display:flex;flex-direction:column;margin-bottom:10px}
 .msg.user{align-items:flex-end}.msg.assistant{align-items:flex-start}
 .msg-meta{display:flex;align-items:center;gap:5px;margin-bottom:3px}
 .msg-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px}
 .msg-who{font-size:9px;font-weight:bold}
-.msg-body{max-width:93%;padding:8px 11px;font-size:11px;line-height:1.65;border-radius:10px;white-space:pre-wrap;font-family:'Courier New',monospace}
-.msg.assistant .msg-body{background:#0e1020;border:0.5px solid var(--b);border-radius:2px 10px 10px 10px;color:var(--text)}
-.msg.user .msg-body{background:rgba(26,219,138,0.1);border:0.5px solid rgba(26,219,138,0.25);border-radius:10px 10px 2px 10px;color:var(--text)}
+.msg-body{max-width:93%;padding:8px 11px;font-size:11px;line-height:1.65;border-radius:10px;white-space:pre-wrap;font-family:'Courier New',monospace;color:var(--text)}
+.msg.assistant .msg-body{background:#0e1020;border:0.5px solid var(--b);border-radius:2px 10px 10px 10px}
+.msg.user .msg-body{background:rgba(26,219,138,0.1);border:0.5px solid rgba(26,219,138,0.25);border-radius:10px 10px 2px 10px}
 .msg-err{background:rgba(226,75,74,0.1)!important;border-color:rgba(226,75,74,0.3)!important;color:#e24b4a!important}
 #inp-wrap{padding:8px 10px;border-top:1px solid var(--b);background:#05060b;display:flex;gap:6px;align-items:flex-end;flex-shrink:0}
 #inp{flex:1;background:var(--inp);border:0.5px solid var(--bhi);border-radius:6px;color:var(--text);font-size:10px;padding:6px 8px;resize:none;font-family:'Courier New',monospace;line-height:1.4}
 #inp:focus{outline:none;border-color:var(--green)}
 #send{width:30px;height:30px;border-radius:6px;background:var(--green);border:none;cursor:pointer;color:#050810;font-size:15px;font-weight:bold;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 #send:disabled{background:var(--bg3);color:var(--dim);cursor:not-allowed}
-
-#conn-badge{position:absolute;top:8px;right:10px;font-size:8px;padding:3px 9px;border-radius:8px;background:rgba(5,6,11,0.9);border:0.5px solid var(--b);z-index:50}
-#conn-badge.ok{color:var(--green);border-color:#0a4a30}
-#conn-badge.err{color:var(--red);border-color:var(--red)}
-
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-thumb{background:var(--bhi);border-radius:2px}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bhi);border-radius:2px}
 </style>
 </head>
 <body>
@@ -189,61 +81,29 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     <a href="/setup.html" id="cfg-btn">⚙ config</a>
   </div>
 </div>
-
 <div id="main">
-  <!-- LEFT NAV -->
   <div id="dept-nav">
-    <div id="dept-nav-title">Salas</div>
-    <button class="dept-all sel" id="btn-all" onclick="selectDept(null)">
-      <span>🏢 Todas las salas</span>
-    </button>
+    <div id="nav-title">Departamentos</div>
     <div id="dept-list"></div>
+    <div id="zoom-controls">
+      <button class="zoom-btn" onclick="adjustZoom(-0.25)">−</button>
+      <button class="zoom-btn" onclick="adjustZoom(0.25)">+</button>
+      <button class="zoom-btn" onclick="resetView()">⌂</button>
+    </div>
   </div>
-
-  <!-- OFFICE CENTER -->
   <div id="office-wrap">
+    <canvas id="map-canvas"></canvas>
     <div id="conn-badge" class="err">⬤ conectando…</div>
-
-    <!-- OVERVIEW: grid of room cards -->
-    <div id="overview">
-      <div id="overview-grid">
-        <div style="color:var(--dim);font-size:11px;font-family:'Courier New',monospace">Cargando agentes desde Confluence…</div>
-      </div>
-    </div>
-
-    <!-- SINGLE ROOM VIEW -->
-    <div id="room-view">
-      <div id="room-scene">
-        <!-- Background image (PNG) -->
-        <img id="room-bg-img" src="" alt=""/>
-        <!-- Fallback background -->
-        <div id="room-bg-fallback"></div>
-        <!-- Sprites layer -->
-        <div id="sprites-layer"></div>
-        <!-- Room topbar -->
-        <div id="room-topbar">
-          <button id="back-btn" onclick="selectDept(null)">← Todas las salas</button>
-          <div id="room-label"></div>
-        </div>
-        <!-- Agent info panel -->
-        <div id="ap">
-          <button id="ap-close" onclick="closePanel()">×</button>
-          <div id="ap-dept"></div>
-          <div id="ap-name"></div>
-          <div id="ap-persona"></div>
-          <div id="ap-desc"></div>
-          <a id="ap-link" href="#" target="_blank">Ver en Confluence →</a>
-        </div>
-      </div>
+    <div id="ap">
+      <button id="ap-close" onclick="closePanel()">×</button>
+      <div id="ap-dept"></div><div id="ap-name"></div>
+      <div id="ap-persona"></div><div id="ap-desc"></div>
+      <div id="ap-status"></div>
+      <a id="ap-link" href="#" target="_blank">Ver en Confluence →</a>
     </div>
   </div>
-
-  <!-- CHAT SIDEBAR -->
   <div id="sidebar">
-    <div id="chat-hdr">
-      <span>💬 Pregunta al equipo</span>
-      <p>¿Quién hace X? ¿Qué hace el agente Y?</p>
-    </div>
+    <div id="chat-hdr"><span>💬 Pregunta al equipo</span><p>¿Quién hace X? ¿Qué hace el agente Y?</p></div>
     <div id="messages"></div>
     <div id="inp-wrap">
       <textarea id="inp" rows="2" placeholder="Ej: ¿quién gestiona Kubernetes?"></textarea>
@@ -251,287 +111,603 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
     </div>
   </div>
 </div>
-
 <script>
-// ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const DC={Cargas:'#22d3ee',Datos:'#a78bfa',Apps:'#1adb8a',Back:'#f0a020',Sistemas:'#4a8fff',Front:'#f472b6','':'#8890b0'};
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TILE ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+const TS = 16; // world tile size
+const SCALE = 2; // render scale (32px per tile on screen)
+const RST = TS * SCALE; // rendered tile size = 32px
+
+const TILE = { EMPTY:0, GRASS:1, FLOOR:2, WALL:3, WALL_H:4, WALL_V:5,
+               DESK:6, PLANT:7, DOOR:8, PATH:9, TREE:10, SHELF:11 };
+const BLOCKED = new Set([TILE.WALL, TILE.WALL_H, TILE.WALL_V, TILE.DESK, TILE.PLANT, TILE.TREE, TILE.SHELF, TILE.EMPTY]);
+
+const DC = {Cargas:'#22d3ee',Datos:'#a78bfa',Apps:'#1adb8a',Back:'#f0a020',Sistemas:'#4a8fff',Front:'#f472b6','':'#8890b0'};
 function dc(d){return DC[d]||'#8890b0';}
 
-const ROOM_FILES={Cargas:'cargas.png',Datos:'datos.png',Apps:'apps.png',Back:'back.png',Sistemas:'sistemas.png',Front:'front.png'};
-const ROOM_DEFAULT='datos.png'; // fallback si no existe imagen específica
-async function getRoomImg(dept){
-  const file=ROOM_FILES[dept];
-  if(file){const img=await loadImg('/assets/rooms/'+file);if(img)return{src:'/assets/rooms/'+file,img};}
-  const def=await loadImg('/assets/rooms/'+ROOM_DEFAULT);
-  return def?{src:'/assets/rooms/'+ROOM_DEFAULT,img:def}:null;
-}
-const ROOM_EMOJI={Cargas:'💧',Datos:'📊',Apps:'📱',Back:'⚙️',Sistemas:'🖥️',Front:'🎨','':'❓'};
-const FALLBACK_BG={
-  Cargas:'linear-gradient(135deg,#0d2228,#0a1820)',
-  Datos: 'linear-gradient(135deg,#160d28,#100a1e)',
-  Apps:  'linear-gradient(135deg,#0d2818,#0a1e14)',
-  Back:  'linear-gradient(135deg,#281a0d,#1e140a)',
-  Sistemas:'linear-gradient(135deg,#0d1828,#0a121e)',
-  Front: 'linear-gradient(135deg,#28100d,#1e0c0a)',
-  '':    'linear-gradient(135deg,#141418,#0e0e12)',
+// ─── TILESET IMAGES ───────────────────────────────────────────────────────
+const IMGS = {};
+const TILE_SRC = {
+  village:    '/assets/tilesets/village.png',
+  grasslands: '/assets/tilesets/grasslands.png',
+  ground:     '/assets/tilesets/ground.png',
 };
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let agents=[], selAgent=null, currentDept=null;
-let chatHist=[], loading=false;
-const imgCache={};
+// Tile definitions: {sheet, sx, sy, sw, sh} in source pixels (16px tiles)
+const TILE_DEFS = {
+  [TILE.GRASS]:  {sheet:'village', sx:2*TS, sy:0,     sw:TS, sh:TS},
+  [TILE.FLOOR]:  {sheet:'village', sx:14*TS,sy:0,     sw:TS, sh:TS},
+  [TILE.WALL]:   {sheet:'village', sx:22*TS,sy:0,     sw:TS, sh:TS},
+  [TILE.WALL_H]: {sheet:'village', sx:23*TS,sy:0,     sw:TS, sh:TS},
+  [TILE.WALL_V]: {sheet:'village', sx:25*TS,sy:0,     sw:TS, sh:TS},
+  [TILE.PATH]:   {sheet:'village', sx:16*TS,sy:0,     sw:TS, sh:TS},
+  [TILE.PLANT]:  {sheet:'village', sx:2*TS, sy:0,     sw:TS, sh:TS}, // grass reused
+  [TILE.DOOR]:   {sheet:'village', sx:14*TS,sy:1*TS,  sw:TS, sh:TS},
+};
+// Multi-tile sprites (drawn on top of floor)
+const SPRITE_DEFS = {
+  desk:  {sheet:'village', sx:0,      sy:8*TS, sw:4*TS, sh:4*TS, tw:2, th:2},
+  desk2: {sheet:'village', sx:4*TS,   sy:8*TS, sw:4*TS, sh:4*TS, tw:2, th:2},
+  shelf: {sheet:'village', sx:0,      sy:12*TS,sw:4*TS, sh:4*TS, tw:2, th:2},
+  plant: {sheet:'grasslands',sx:0,    sy:0,    sw:2*TS, sh:2*TS, tw:1, th:1},
+};
 
-function loadImg(src){
-  if(imgCache[src]) return imgCache[src];
-  const p=new Promise(res=>{
-    const img=new Image();
-    img.onload=()=>res(img);
-    img.onerror=()=>res(null);
+let tilesLoaded = false;
+async function loadTilesets(){
+  return Promise.all(Object.entries(TILE_SRC).map(([k,src])=>new Promise(res=>{
+    const img=new Image(); img.onload=()=>{IMGS[k]=img;res();}; img.onerror=res;
     img.src=src;
+  }))).then(()=>{ tilesLoaded=true; });
+}
+
+// ─── DRAW SINGLE TILE ──────────────────────────────────────────────────────
+function drawTile(ctx, tileType, dx, dy){
+  if(!tilesLoaded){ // fallback colored tiles
+    const colors={[TILE.GRASS]:'#4a6a2a',[TILE.FLOOR]:'#c4a882',[TILE.WALL]:'#5a5a6a',
+      [TILE.WALL_H]:'#6a6a7a',[TILE.WALL_V]:'#606070',[TILE.PATH]:'#b0a090',
+      [TILE.PLANT]:'#2a5a1a',[TILE.DOOR]:'#8a6a4a',[TILE.DESK]:'#7a5a3a',
+      [TILE.TREE]:'#2a6a1a',[TILE.SHELF]:'#8a6040'};
+    ctx.fillStyle=colors[tileType]||'#111'; ctx.fillRect(dx,dy,RST,RST); return;
+  }
+  const def=TILE_DEFS[tileType]; if(!def) return;
+  const img=IMGS[def.sheet]; if(!img) return;
+  ctx.drawImage(img, def.sx,def.sy,def.sw,def.sh, dx,dy,RST,RST);
+}
+
+// ─── DRAW SPRITE OBJECT ────────────────────────────────────────────────────
+function drawSprite(ctx, spriteName, dx, dy){
+  const def=SPRITE_DEFS[spriteName]; if(!def) return;
+  if(!tilesLoaded){
+    ctx.fillStyle='#7a5a3a'; ctx.fillRect(dx,dy,def.tw*RST,def.th*RST); return;
+  }
+  const img=IMGS[def.sheet]; if(!img) return;
+  ctx.drawImage(img, def.sx,def.sy,def.sw,def.sh, dx,dy,def.tw*RST,def.th*RST);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAP GENERATION
+// ═══════════════════════════════════════════════════════════════════════════
+const ROOM_W=18, ROOM_H=14;
+const CORR_H=4, CORR_V=4;
+const COLS=2;
+
+function buildMap(depts){
+  const rows=Math.ceil(depts.length/COLS);
+  const mapW=COLS*ROOM_W+CORR_V*(COLS-1)+6;
+  const mapH=rows*ROOM_H+CORR_H*(rows-1)+6;
+
+  // Fill with grass
+  const map=Array.from({length:mapH},()=>new Uint8Array(mapW).fill(TILE.GRASS));
+  const rooms=[];
+  // Sprites to draw on top (positioned furniture)
+  const furnitures=[]; // {sprite,tx,ty}
+
+  depts.forEach((dept,i)=>{
+    const col=i%COLS, row=Math.floor(i/COLS);
+    const rx=3+col*(ROOM_W+CORR_V);
+    const ry=3+row*(ROOM_H+CORR_H);
+    const room=buildRoom(map,dept,rx,ry,furnitures);
+    rooms.push(room);
+
+    // Corridor right
+    if(col===0 && i+1<depts.length){
+      for(let cv=0;cv<CORR_V;cv++)
+        for(let cy=ry+3;cy<ry+ROOM_H-3;cy++)
+          if(map[cy]) map[cy][rx+ROOM_W+cv]=TILE.PATH;
+    }
+    // Corridor down
+    if(row>0){
+      const pry=3+(row-1)*(ROOM_H+CORR_H);
+      for(let cx=rx+4;cx<rx+ROOM_W-4;cx++)
+        for(let ch=0;ch<CORR_H;ch++)
+          if(map[pry+ROOM_H+ch]) map[pry+ROOM_H+ch][cx]=TILE.PATH;
+    }
   });
-  imgCache[src]=p;
-  return p;
-}
 
-// Preload all assets
-function preload(){
-  loadImg('/assets/sprites/default.png');
-  Object.values(ROOM_FILES).forEach(f=>loadImg('/assets/rooms/'+f));
-}
-
-// ── OVERVIEW ──────────────────────────────────────────────────────────────────
-function renderOverview(){
-  const grid=document.getElementById('overview-grid');
-  grid.innerHTML='';
-  const depts=[...new Set(agents.map(a=>a.departamento||''))];
-  if(depts.length===0){
-    grid.innerHTML='<div style="color:var(--dim);font-size:11px;font-family:Courier New,monospace">Cargando agentes desde Confluence…</div>';
-    return;
+  // Border trees
+  for(let x=0;x<mapW;x++){
+    if(map[0]) map[0][x]=TILE.TREE;
+    if(map[1]) map[1][x]=TILE.TREE;
+    if(map[mapH-1]) map[mapH-1][x]=TILE.TREE;
+    if(map[mapH-2]) map[mapH-2][x]=TILE.TREE;
+  }
+  for(let y=0;y<mapH;y++){
+    if(map[y]){map[y][0]=TILE.TREE;map[y][1]=TILE.TREE;map[y][mapW-1]=TILE.TREE;map[y][mapW-2]=TILE.TREE;}
   }
 
-  depts.forEach(dept=>{
-    const dAgents=agents.filter(a=>(a.departamento||'')===dept);
-    const dC=dc(dept);
-    const card=document.createElement('div');
-    card.className='room-card';
-    card.style.borderColor=dC+'44';
-    card.onclick=()=>selectDept(dept);
+  return {map,mapW,mapH,rooms,furnitures};
+}
 
-    // Check if room image exists
-    const imgFile=ROOM_FILES[dept];
-    const imgSrc=imgFile?'/assets/rooms/'+imgFile:null;
+function buildRoom(map,dept,rx,ry,furnitures){
+  const desks=[], walkable=[];
+  const RW=ROOM_W, RH=ROOM_H;
 
-    // Load room image (with fallback to datos.png)
-    getRoomImg(dept).then(result=>{
-      if(result){
-        const imgEl=document.createElement('img');
-        imgEl.className='room-card-img';
-        imgEl.src=result.src;
-        imgEl.style.imageRendering='pixelated';
-        const existing=card.querySelector('.room-card-img');
-        if(existing) existing.replaceWith(imgEl);
-        else{ const fb=card.querySelector('.room-card-fallback'); if(fb) card.replaceChild(imgEl,fb); else card.insertBefore(imgEl,card.firstChild); }
+  // Floor
+  for(let y=ry+1;y<ry+RH-1;y++)
+    for(let x=rx+1;x<rx+RW-1;x++)
+      if(map[y]) map[y][x]=TILE.FLOOR;
+
+  // Walls
+  for(let x=rx;x<rx+RW;x++){if(map[ry])map[ry][x]=TILE.WALL_H;if(map[ry+RH-1])map[ry+RH-1][x]=TILE.WALL_H;}
+  for(let y=ry;y<ry+RH;y++){if(map[y]){map[y][rx]=TILE.WALL_V;map[y][rx+RW-1]=TILE.WALL_V;}}
+  // Corners
+  if(map[ry]){map[ry][rx]=TILE.WALL;map[ry][rx+RW-1]=TILE.WALL;}
+  if(map[ry+RH-1]){map[ry+RH-1][rx]=TILE.WALL;map[ry+RH-1][rx+RW-1]=TILE.WALL;}
+
+  // Doors
+  if(map[ry+RH-1]){map[ry+RH-1][rx+Math.floor(RW/2)-1]=TILE.DOOR;map[ry+RH-1][rx+Math.floor(RW/2)]=TILE.DOOR;}
+  for(let y=ry+RH/2-2;y<ry+RH/2+2;y++) if(map[y]) map[y][rx+RW-1]=TILE.DOOR;
+
+  // Desk layout: 2 rows × 3 desks
+  const deskPositions=[
+    {tx:rx+2,ty:ry+2},{tx:rx+6,ty:ry+2},{tx:rx+10,ty:ry+2},
+    {tx:rx+2,ty:ry+7},{tx:rx+6,ty:ry+7},{tx:rx+10,ty:ry+7},
+  ];
+  deskPositions.forEach(({tx,ty})=>{
+    if(tx+2<rx+RW-1&&ty+2<ry+RH-1){
+      // Mark 2×2 as blocked
+      for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++) if(map[ty+dy]) map[ty+dy][tx+dx]=TILE.DESK;
+      desks.push({tx,ty});
+      furnitures.push({sprite:Math.random()>0.4?'desk':'desk2',tx,ty});
+    }
+  });
+
+  // Plants in corners
+  [[rx+1,ry+1],[rx+RW-3,ry+1],[rx+1,ry+RH-3]].forEach(([x,y])=>{
+    if(map[y]&&map[y][x]===TILE.FLOOR){map[y][x]=TILE.PLANT;map[y+1]&&(map[y+1][x]=TILE.PLANT);}
+    furnitures.push({sprite:'plant',tx:x,ty:y});
+  });
+
+  // Shelf on one wall
+  const shelfX=rx+RW-4, shelfY=ry+2;
+  if(shelfX+2<rx+RW-1){
+    for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++) if(map[shelfY+dy]) map[shelfY+dy][shelfX+dx]=TILE.SHELF;
+    furnitures.push({sprite:'shelf',tx:shelfX,ty:shelfY});
+  }
+
+  // Walkable tiles
+  for(let y=ry+1;y<ry+RH-1;y++)
+    for(let x=rx+1;x<rx+RW-1;x++)
+      if(map[y]&&!BLOCKED.has(map[y][x])) walkable.push({tx:x,ty:y});
+
+  return {dept,rx,ry,rw:RW,rh:RH,desks,walkable};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// A* PATHFINDING
+// ═══════════════════════════════════════════════════════════════════════════
+function astar(map,mapW,mapH,sx,sy,ex,ey){
+  const key=(x,y)=>y*mapW+x;
+  const walkable=(x,y)=>x>=0&&y>=0&&x<mapW&&y<mapH&&!BLOCKED.has(map[y]?.[x]??TILE.WALL);
+  if(!walkable(ex,ey)) return [];
+  const open=new Map(),closed=new Set(),g={},f={},par={};
+  const h=(x,y)=>Math.abs(x-ex)+Math.abs(y-ey);
+  const sk=key(sx,sy); g[sk]=0; f[sk]=h(sx,sy); open.set(sk,{x:sx,y:sy});
+  let iter=0;
+  while(open.size&&iter++<3000){
+    let cur=null,best=Infinity;
+    for(const[k,n]of open){const fv=f[k]??Infinity;if(fv<best){best=fv;cur=n;}}
+    if(!cur)break;
+    const ck=key(cur.x,cur.y);
+    if(cur.x===ex&&cur.y===ey){
+      const path=[];let n=cur;
+      while(par[key(n.x,n.y)]){path.unshift({...n});n=par[key(n.x,n.y)];}
+      return path;
+    }
+    open.delete(ck);closed.add(ck);
+    for(const[dx,dy]of[[0,-1],[0,1],[-1,0],[1,0]]){
+      const nx=cur.x+dx,ny=cur.y+dy;
+      if(!walkable(nx,ny))continue;
+      const nk=key(nx,ny);if(closed.has(nk))continue;
+      const ng=(g[ck]??0)+1;
+      if(!open.has(nk)||ng<(g[nk]??Infinity)){
+        par[nk]=cur;g[nk]=ng;f[nk]=ng+h(nx,ny);open.set(nk,{x:nx,y:ny});
       }
-    });
-
-    // Fallback div (always add, remove if img loads)
-    const fb=document.createElement('div');
-    fb.className='room-card-fallback';
-    fb.style.background=FALLBACK_BG[dept]||FALLBACK_BG[''];
-    fb.innerHTML=`<span style="font-size:48px">${ROOM_EMOJI[dept]||'🏢'}</span>`;
-    card.appendChild(fb);
-
-    // Agent dots
-    const dotsEl=document.createElement('div');
-    dotsEl.className='room-card-dots';
-    dAgents.slice(0,12).forEach(()=>{
-      const d=document.createElement('div');
-      d.className='room-dot';
-      d.style.color=dC;d.style.background=dC;
-      dotsEl.appendChild(d);
-    });
-    card.appendChild(dotsEl);
-
-    // Bottom bar
-    const bar=document.createElement('div');
-    bar.className='room-card-bar';
-    bar.innerHTML=`<span class="room-card-name" style="color:${dC}">${(dept||'Sin depto').toUpperCase()}</span><span class="room-card-cnt">${dAgents.length} agentes</span>`;
-    card.appendChild(bar);
-
-    grid.appendChild(card);
-  });
-
-  // Re-render overview cards with loaded images
-  setTimeout(()=>{
-    document.querySelectorAll('.room-card').forEach(card=>{
-      const bar=card.querySelector('.room-card-bar');
-      const deptName=bar?.querySelector('.room-card-name')?.textContent?.toLowerCase().replace(' ','');
-      // check if img already cached
-    });
-  },500);
+    }
+  }
+  return[];
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT
+// ═══════════════════════════════════════════════════════════════════════════
+const SKINS=['#FDBCB4','#EAA882','#D4956A','#C68642','#A0522D'];
+const HAIR_C=['#2C2C2A','#5C3A1E','#8B6914','#D4A017','#C0392B','#E0E0E0'];
 
-// ── ROOM VIEW ─────────────────────────────────────────────────────────────────
-async function renderRoomView(){
-  const dC=dc(currentDept);
-
-  // Label
-  const lbl=document.getElementById('room-label');
-  lbl.textContent=(currentDept||'Sin depto').toUpperCase();
-  lbl.style.color=dC;
-  lbl.style.borderColor=dC+'66';
-
-  // Background
-  const imgFile=ROOM_FILES[currentDept];
-  const imgSrc=imgFile?'/assets/rooms/'+imgFile:null;
-  const bgImg=document.getElementById('room-bg-img');
-  const bgFb=document.getElementById('room-bg-fallback');
-
-  const roomImgResult = await getRoomImg(currentDept);
-  if(roomImgResult){
-    bgImg.src=roomImgResult.src;
-    bgImg.classList.add('on');
-    bgFb.classList.add('hidden');
-  } else {
-    bgImg.classList.remove('on');
-    bgFb.classList.remove('hidden');
-    bgFb.style.background=FALLBACK_BG[currentDept]||FALLBACK_BG[''];
-    bgFb.innerHTML=`<span style="font-size:80px">${ROOM_EMOJI[currentDept]||'🏢'}</span>`;
+class Agent{
+  constructor(data,room,mapData){
+    this.nombre=data.nombre; this.dept=data.departamento||'';
+    this.persona=data.persona||'—'; this.descripcion=data.descripcion||'';
+    this.url=data.url||null; this.room=room; this.mapData=mapData;
+    this.state='idle'; this.path=[]; this.facing=Math.random()*Math.PI*2;
+    const h=[...this.nombre].reduce((a,c)=>a+c.charCodeAt(0),0);
+    this.skin=SKINS[h%SKINS.length]; this.hairCol=HAIR_C[(h*3)%HAIR_C.length];
+    const s=room.walkable[Math.floor(Math.random()*room.walkable.length)];
+    this.tx=s.tx; this.ty=s.ty;
+    this.wx=(this.tx+0.5)*RST; this.wy=(this.ty+0.5)*RST;  // world px
+    this.stateTimer=0; this.nextAction=Math.random()*200;
+    this.workDesk=null; this.chatPartner=null;
+    this._hx=0;this._hy=0;this._hr=16;
   }
 
-  // Sprites
-  const spritesLayer=document.getElementById('sprites-layer');
-  spritesLayer.innerHTML='';
+  pickDest(all){
+    const r=Math.random();
+    if(r<0.45&&this.room.desks.length){
+      const d=this.room.desks[Math.floor(Math.random()*this.room.desks.length)];
+      for(const [dx,dy] of [[0,2],[1,2],[0,-1],[-1,0],[2,0]]){
+        const tx=d.tx+dx,ty=d.ty+dy;
+        if(!BLOCKED.has(this.mapData.map[ty]?.[tx]??TILE.WALL)){this.workDesk=d;return{tx,ty};}
+      }
+    }
+    if(r<0.72||this.room.walkable.length===0){
+      const w=this.room.walkable;
+      return w[Math.floor(Math.random()*w.length)];
+    }
+    // Visit another room
+    const others=all.filter(a=>a!==this&&a.room!==this.room);
+    if(others.length){
+      const or=others[Math.floor(Math.random()*others.length)].room;
+      const w=or.walkable;
+      return w[Math.floor(Math.random()*w.length)];
+    }
+    const w=this.room.walkable;
+    return w[Math.floor(Math.random()*w.length)];
+  }
 
-  const roomAgents=agents.filter(a=>(a.departamento||'')===currentDept);
-  const defaultSprite=await loadImg('/assets/sprites/default.png');
+  update(dt,all){
+    this.stateTimer-=dt;
+    if(this.state==='chatting'){if(this.stateTimer<=0){this.state='idle';this.chatPartner=null;this.nextAction=20+Math.random()*60;}return;}
+    if(this.state==='idle'||this.state==='working'){
+      this.nextAction-=dt;
+      if(this.nextAction<=0){
+        const dest=this.pickDest(all);
+        if(dest){
+          const p=astar(this.mapData.map,this.mapData.mapW,this.mapData.mapH,this.tx,this.ty,dest.tx,dest.ty);
+          if(p.length){this.path=[...p];this.state='walking';}
+        }
+        this.nextAction=80+Math.random()*250;
+      }
+      // Chat check
+      if(this.state==='idle'&&Math.random()<0.003){
+        const nb=all.find(a=>a!==this&&Math.hypot(a.wx-this.wx,a.wy-this.wy)<RST*3&&a.state==='idle');
+        if(nb){this.state='chatting';this.chatPartner=nb;nb.state='chatting';nb.chatPartner=this;this.stateTimer=nb.stateTimer=60+Math.random()*100;}
+      }
+    }
+    if(this.state==='walking'&&this.path.length){
+      const nxt=this.path[0];
+      const tx=(nxt.x+0.5)*RST,ty=(nxt.y+0.5)*RST;
+      const dx=tx-this.wx,dy=ty-this.wy,dist=Math.hypot(dx,dy);
+      const spd=RST*0.06;
+      if(dist<spd){
+        this.wx=tx;this.wy=ty;this.tx=nxt.x;this.ty=nxt.y;
+        this.path.shift();
+        if(!this.path.length){this.state=this.workDesk?'working':'idle';this.nextAction=100+Math.random()*200;}
+      } else {
+        this.facing=Math.atan2(dy,dx);
+        this.wx+=Math.cos(this.facing)*spd;
+        this.wy+=Math.sin(this.facing)*spd;
+      }
+    }
+  }
 
-  // Grid positions: spread across the lower portion of the scene
-  const cols=Math.ceil(Math.sqrt(roomAgents.length));
-  const rows=Math.ceil(roomAgents.length/cols);
-  const scene=document.getElementById('room-scene');
-  const sceneW=scene.offsetWidth||window.innerWidth-430;
-  const sceneH=scene.offsetHeight||window.innerHeight-30;
+  draw(ctx, camX, camY, camScale, sel){
+    const sx=camX+this.wx*camScale, sy=camY+this.wy*camScale;
+    const r=Math.max(6,9*camScale);
+    const dC=dc(this.dept);
+    const isSel=sel&&sel.nombre===this.nombre;
 
-  // Sprite height: 22% of scene height
-  const sprH=Math.round(sceneH*0.22);
+    // Shadow
+    ctx.fillStyle='rgba(0,0,0,0.25)';
+    ctx.beginPath();ctx.ellipse(sx,sy+r*0.6,r*0.65,r*0.22,0,0,Math.PI*2);ctx.fill();
 
-  roomAgents.forEach(async(ag,i)=>{
-    const col=i%cols, row=Math.floor(i/cols);
-    // x: 15% to 85% spread, y: 50% to 88% spread
-    const xPct=15+(col/(Math.max(cols-1,1)))*70;
-    const yPct=50+(row/(Math.max(rows-1,1)))*36;
+    // Body
+    ctx.fillStyle=isSel?dC:dC+'bb';
+    ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
 
-    // Try agent-specific sprite first
-    const safeName=ag.nombre.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-    let sprite=await loadImg(`/assets/sprites/${safeName}.png`);
-    if(!sprite) sprite=defaultSprite;
+    // Head
+    ctx.fillStyle=this.skin;
+    ctx.beginPath();ctx.arc(sx,sy-r*0.1,r*0.55,0,Math.PI*2);ctx.fill();
 
-    const sprW=sprite?Math.round(sprH*(sprite.naturalWidth/sprite.naturalHeight)):sprH;
+    // Hair
+    ctx.fillStyle=this.hairCol;
+    ctx.beginPath();ctx.arc(sx,sy-r*0.18,r*0.45,Math.PI,Math.PI*2);ctx.fill();
 
-    const wrap=document.createElement('div');
-    wrap.className='agent-wrap';
-    wrap.style.left=xPct+'%';
-    wrap.style.top=yPct+'%';
-    wrap.style.setProperty('--glow',dC);
-    wrap.style.zIndex=Math.round(yPct);
-    wrap.dataset.nombre=ag.nombre;
+    // Eyes
+    const eyeOff=r*0.14;
+    ctx.fillStyle='#222';
+    ctx.beginPath();ctx.arc(sx-eyeOff,sy-r*0.05,r*0.12,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(sx+eyeOff,sy-r*0.05,r*0.12,0,Math.PI*2);ctx.fill();
 
-    const img=document.createElement('img');
-    img.className='agent-img';
-    img.src=sprite?sprite.src:'/assets/sprites/default.png';
-    img.width=sprW;
-    img.height=sprH;
-    img.style.animationDelay=(i*0.35)%2.5+'s';
+    // Walk direction arrow
+    if(this.state==='walking'){
+      ctx.save();ctx.translate(sx,sy);ctx.rotate(this.facing);
+      ctx.fillStyle='rgba(255,255,255,0.5)';
+      ctx.beginPath();ctx.moveTo(r+2,0);ctx.lineTo(r-2,-3);ctx.lineTo(r-2,3);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
 
-    const nameEl=document.createElement('div');
-    nameEl.className='agent-name';
-    nameEl.style.color=dC;
-    nameEl.style.borderColor=dC+'55';
-    const shortName=ag.nombre.length>16?ag.nombre.slice(0,15)+'…':ag.nombre;
-    nameEl.textContent=shortName;
+    // State ring
+    ctx.strokeStyle=isSel?'#ffffff':dC+'88';ctx.lineWidth=isSel?2.5:1;
+    ctx.beginPath();ctx.arc(sx,sy,r+2,0,Math.PI*2);ctx.stroke();
 
-    wrap.appendChild(img);
-    wrap.appendChild(nameEl);
-    wrap.addEventListener('click',e=>{e.stopPropagation();showPanel(ag);});
-    spritesLayer.appendChild(wrap);
+    // Status dot
+    const sc={idle:'#555',walking:dC,working:'#1adb8a',chatting:'#f0a020'}[this.state]||'#555';
+    ctx.fillStyle=sc;ctx.beginPath();ctx.arc(sx+r*0.7,sy-r*0.7,r*0.22,0,Math.PI*2);ctx.fill();
 
-    // Apply selection state
-    if(selAgent&&selAgent.nombre===ag.nombre) wrap.classList.add('sel');
-  });
+    // Name tag when zoomed or selected
+    if(camScale>1.1||isSel){
+      const nm=this.nombre.length>14?this.nombre.slice(0,13)+'…':this.nombre;
+      ctx.font=`${Math.max(7,8*camScale)}px 'Courier New'`;
+      const tw=ctx.measureText(nm).width+8;
+      ctx.fillStyle='rgba(5,6,11,0.88)';ctx.strokeStyle=dC+'88';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.roundRect(sx-tw/2,sy+r+3,tw,11,2);ctx.stroke();ctx.fill();
+      ctx.fillStyle=isSel?dC:'#8890b0';ctx.textAlign='center';
+      ctx.fillText(nm,sx,sy+r+11);
+    }
 
-  // Click background to deselect
-  scene.onclick=(e)=>{
-    if(e.target===scene||e.target===bgImg||e.target===bgFb) closePanel();
-  };
+    // Chat bubble
+    if(this.state==='chatting'){
+      ctx.font=`${Math.max(9,10*camScale)}px serif`;ctx.textAlign='center';
+      ctx.fillText('💬',sx+r*0.8,sy-r*1.3);
+    }
+
+    // Working blink
+    if(this.state==='working'&&Math.floor(Date.now()/600)%2===0){
+      ctx.fillStyle=dC+'55';
+      ctx.beginPath();ctx.arc(sx,sy,r*0.3,0,Math.PI*2);ctx.fill();
+    }
+
+    this._hx=sx-r;this._hy=sy-r;this._hr=r*2;
+  }
 }
 
-// ── SELECTION ─────────────────────────────────────────────────────────────────
-function selectDept(d){
-  currentDept=(d===null)?null:d;
-  selAgent=null;
-  document.getElementById('ap').classList.remove('on');
+// ═══════════════════════════════════════════════════════════════════════════
+// CANVAS & CAMERA
+// ═══════════════════════════════════════════════════════════════════════════
+const canvas=document.getElementById('map-canvas');
+const ctx=canvas.getContext('2d');
+let W=0,H=0,camX=0,camY=0,camScale=1;
 
-  const overview=document.getElementById('overview');
-  const roomView=document.getElementById('room-view');
+function resizeCanvas(){
+  const el=document.getElementById('office-wrap');
+  W=canvas.width=el.clientWidth;H=canvas.height=el.clientHeight;
+}
+window.addEventListener('resize',()=>{resizeCanvas();if(mapData)resetView();});
+resizeCanvas();
 
-  if(currentDept===null){
-    roomView.classList.remove('on');
-    overview.style.display='grid';
-  } else {
-    overview.style.display='none';
-    roomView.classList.add('on');
-    renderRoomView();
+function adjustZoom(d){camScale=Math.max(0.4,Math.min(3,camScale+d));}
+function resetView(){
+  if(!mapData)return;
+  const tw=mapData.mapW*RST,th=mapData.mapH*RST;
+  camScale=Math.min(W/tw,H/th)*0.92;
+  camX=(W-tw*camScale)/2; camY=(H-th*camScale)/2;
+}
+
+// ─── DRAG & SCROLL ─────────────────────────────────────────────────────────
+let drag=false,ds={x:0,y:0},cs={x:0,y:0};
+canvas.addEventListener('mousedown',e=>{drag=true;ds={x:e.clientX,y:e.clientY};cs={x:camX,y:camY};});
+window.addEventListener('mousemove',e=>{if(drag){camX=cs.x+(e.clientX-ds.x);camY=cs.y+(e.clientY-ds.y);}});
+window.addEventListener('mouseup',e=>{
+  if(drag&&Math.hypot(e.clientX-ds.x,e.clientY-ds.y)<5){
+    const r=canvas.getBoundingClientRect();
+    handleClick(e.clientX-r.left,e.clientY-r.top);
+  }
+  drag=false;
+});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const delta=e.deltaY>0?-0.12:0.12;
+  const old=camScale; camScale=Math.max(0.3,Math.min(3,camScale+delta));
+  const r=canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  camX=mx-(mx-camX)*(camScale/old);camY=my-(my-camY)*(camScale/old);
+},{passive:false});
+
+function handleClick(mx,my){
+  let hit=null;
+  for(const ag of agentObjs){
+    if(ag._hx&&mx>ag._hx&&mx<ag._hx+ag._hr&&my>ag._hy&&my<ag._hy+ag._hr){hit=ag;break;}
+  }
+  if(hit)showPanel(hit);else closePanel();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER LOOP
+// ═══════════════════════════════════════════════════════════════════════════
+let mapData=null, agentObjs=[], selAgent=null;
+
+function renderMap(){
+  if(!mapData)return;
+  const {map,mapW,mapH,rooms,furnitures}=mapData;
+
+  // Visible tile range
+  const x0=Math.max(0,Math.floor(-camX/(RST*camScale)));
+  const y0=Math.max(0,Math.floor(-camY/(RST*camScale)));
+  const x1=Math.min(mapW,Math.ceil((W-camX)/(RST*camScale)));
+  const y1=Math.min(mapH,Math.ceil((H-camY)/(RST*camScale)));
+
+  // Floor/terrain pass
+  for(let ty=y0;ty<y1;ty++){
+    for(let tx=x0;tx<x1;tx++){
+      const t=map[ty]?.[tx]??TILE.EMPTY;
+      const sx=camX+tx*RST*camScale, sy=camY+ty*RST*camScale;
+      const ss=RST*camScale;
+
+      if(t===TILE.EMPTY){ctx.fillStyle='#1a2410';ctx.fillRect(sx,sy,ss,ss);continue;}
+
+      // Draw base tile
+      if(tilesLoaded){
+        const def=TILE_DEFS[t]||TILE_DEFS[TILE.GRASS];
+        if(def){
+          const img=IMGS[def.sheet];
+          if(img) ctx.drawImage(img,def.sx,def.sy,def.sw,def.sh,sx,sy,ss,ss);
+        }
+      } else {
+        drawTile(ctx,t,sx,sy);
+      }
+
+      // Room tint
+      if(t===TILE.FLOOR){
+        const room=rooms.find(r=>tx>=r.rx&&tx<r.rx+r.rw&&ty>=r.ry&&ty<r.ry+r.rh);
+        if(room){ctx.fillStyle=dc(room.dept)+'08';ctx.fillRect(sx,sy,ss,ss);}
+      }
+    }
   }
 
+  // Furniture pass
+  furnitures.forEach(({sprite,tx,ty})=>{
+    const def=SPRITE_DEFS[sprite]; if(!def) return;
+    const sx=camX+tx*RST*camScale, sy=camY+ty*RST*camScale;
+    const sw=def.tw*RST*camScale, sh=def.th*RST*camScale;
+    if(sx+sw<0||sx>W||sy+sh<0||sy>H) return;
+    if(tilesLoaded){
+      const img=IMGS[def.sheet];
+      if(img) ctx.drawImage(img,def.sx,def.sy,def.sw,def.sh,sx,sy,sw,sh);
+    } else {
+      ctx.fillStyle='#7a5a3a';ctx.fillRect(sx,sy,sw,sh);
+    }
+  });
+
+  // Room labels
+  rooms.forEach(r=>{
+    const dC=dc(r.dept);
+    const lx=camX+(r.rx+r.rw/2)*RST*camScale;
+    const ly=camY+(r.ry+0.8)*RST*camScale;
+    ctx.font=`bold ${Math.max(9,11*camScale)}px 'Courier New'`;
+    ctx.textAlign='center';
+    ctx.fillStyle='rgba(5,6,11,0.7)';
+    const tw=ctx.measureText(r.dept).width+14;
+    ctx.fillRect(lx-tw/2,ly-12,tw,14);
+    ctx.fillStyle=dC;ctx.fillText(r.dept.toUpperCase(),lx,ly-1);
+  });
+
+  // Agents (sorted by Y)
+  agentObjs.sort((a,b)=>a.wy-b.wy).forEach(ag=>{ag.draw(ctx,camX,camY,camScale,selAgent);});
+
+  // Minimap
+  const mm=3,mx=W-mapW*mm-12,my=H-mapH*mm-12;
+  ctx.fillStyle='rgba(5,6,11,0.85)';ctx.fillRect(mx-2,my-2,mapW*mm+4,mapH*mm+4);
+  for(let y=0;y<mapH;y++) for(let x=0;x<mapW;x++){
+    const t=map[y]?.[x]??TILE.EMPTY;
+    const room=rooms.find(r=>x>=r.rx&&x<r.rx+r.rw&&y>=r.ry&&y<r.ry+r.rh);
+    const rc=room?dc(room.dept):'#222';
+    ctx.fillStyle=t===TILE.WALL||t===TILE.WALL_H||t===TILE.WALL_V?'#3a3a5a':
+      t===TILE.FLOOR?'#2a2a3a':t===TILE.GRASS||t===TILE.TREE?'#1a3010':
+      t===TILE.PATH?'#2a2a2a':t===TILE.DESK?rc+'99':'#111';
+    ctx.fillRect(mx+x*mm,my+y*mm,mm,mm);
+  }
+  agentObjs.forEach(ag=>{
+    ctx.fillStyle=dc(ag.dept);
+    ctx.beginPath();ctx.arc(mx+(ag.wx/RST)*mm,my+(ag.wy/RST)*mm,1.5,0,Math.PI*2);ctx.fill();
+  });
+  // Viewport indicator
+  ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=0.8;
+  ctx.strokeRect(mx+(-camX/(RST*camScale))*mm,my+(-camY/(RST*camScale))*mm,(W/(RST*camScale))*mm,(H/(RST*camScale))*mm);
+}
+
+let lastT=0;
+function loop(ts){
+  const dt=Math.min(ts-lastT,50);lastT=ts;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#1a2410';ctx.fillRect(0,0,W,H);
+
+  if(!mapData||agentObjs.length===0){
+    ctx.fillStyle='#2a3a1a';ctx.font='12px Courier New';ctx.textAlign='center';
+    ctx.fillText('Cargando oficina desde Confluence…',W/2,H/2);
+    requestAnimationFrame(loop);return;
+  }
+
+  renderMap();
+  agentObjs.forEach(ag=>ag.update(dt,agentObjs));
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+let confluenceAgents=[];
+
+function initWorld(){
+  const depts=[...new Set(confluenceAgents.map(a=>a.departamento||''))].filter(Boolean);
+  if(!depts.length)return;
+  mapData=buildMap(depts);
+  agentObjs=[];
+  confluenceAgents.forEach(ag=>{
+    const room=mapData.rooms.find(r=>r.dept===(ag.departamento||''));
+    if(room) agentObjs.push(new Agent(ag,room,mapData));
+  });
+  resetView();
   buildDeptNav();
+  updateLive();
 }
 
-// ── AGENT PANEL ───────────────────────────────────────────────────────────────
+// Panel
+let selAgent=null;
 function showPanel(ag){
   selAgent=ag;
-  const dC=dc(ag.departamento);
-  document.getElementById('ap').style.borderColor=dC+'88';
+  const dC=dc(ag.dept);
+  const ap=document.getElementById('ap');
+  ap.style.borderColor=dC+'88';
   document.getElementById('ap-dept').style.color=dC;
-  document.getElementById('ap-dept').textContent=(ag.departamento||'Sin dpto').toUpperCase();
+  document.getElementById('ap-dept').textContent=(ag.dept||'Sin dpto').toUpperCase();
   document.getElementById('ap-name').textContent=ag.nombre;
   document.getElementById('ap-persona').textContent='👤 '+(ag.persona||'—');
   document.getElementById('ap-desc').textContent=ag.descripcion||'';
+  const stL={idle:'💤 Inactivo',walking:'🚶 Caminando',working:'💻 Trabajando',chatting:'💬 Charlando'};
+  const stEl=document.getElementById('ap-status');
+  stEl.textContent=stL[ag.state]||'';stEl.style.color=dC;
   const lk=document.getElementById('ap-link');
   if(ag.url){lk.href=ag.url;lk.style.display='inline';}else lk.style.display='none';
-  document.getElementById('ap').classList.add('on');
-  // Highlight selected, dim others
-  document.querySelectorAll('.agent-wrap').forEach(el=>{
-    if(el.dataset.nombre===ag.nombre){el.classList.add('sel');el.classList.remove('dimmed');}
-    else{el.classList.remove('sel');el.classList.add('dimmed');}
-  });
+  ap.classList.add('on');
+  camX=W/2-ag.wx*camScale;camY=H/2-ag.wy*camScale;
 }
-function closePanel(){
-  selAgent=null;
-  document.getElementById('ap').classList.remove('on');
-  document.querySelectorAll('.agent-wrap').forEach(el=>{el.classList.remove('sel','dimmed');});
-}
+function closePanel(){selAgent=null;document.getElementById('ap').classList.remove('on');}
 
-// ── DEPT NAV ──────────────────────────────────────────────────────────────────
 function buildDeptNav(){
-  const depts=[...new Set(agents.map(a=>a.departamento||''))];
-  document.getElementById('btn-all').className='dept-all'+(currentDept===null?' sel':'');
+  const depts=[...new Set(confluenceAgents.map(a=>a.departamento||''))].filter(Boolean);
   document.getElementById('dept-list').innerHTML=depts.map(d=>{
-    const c=dc(d),cnt=agents.filter(a=>(a.departamento||'')===d).length;
-    return`<button class="dept-btn${currentDept===d?' sel':''}" style="--dc:${c}" onclick="selectDept('${esc(d)}')">
+    const c=dc(d),cnt=confluenceAgents.filter(a=>a.departamento===d).length;
+    return`<button class="dept-btn" style="--dc:${c}" onclick="focusDept('${esc(d)}')">
       <div class="d-dot" style="background:${c}"></div>
-      <div class="d-name${currentDept===d?' hi':''}">${esc(d||'Sin depto')}</div>
+      <div class="d-name">${esc(d)}</div>
       <span class="d-cnt">${cnt}</span>
     </button>`;
   }).join('');
 }
+function focusDept(dept){
+  const r=mapData?.rooms.find(r=>r.dept===dept);if(!r)return;
+  camX=W/2-(r.rx+r.rw/2)*RST*camScale;camY=H/2-(r.ry+r.rh/2)*RST*camScale;
+  document.querySelectorAll('.dept-btn').forEach(b=>b.classList.toggle('active',b.querySelector('.d-name')?.textContent===dept));
+}
 function updateLive(){
-  const depts=[...new Set(agents.map(a=>a.departamento).filter(Boolean))].length;
-  document.getElementById('live-txt').textContent=`${agents.length} agentes · ${depts} salas`;
+  const d=[...new Set(confluenceAgents.map(a=>a.departamento).filter(Boolean))].length;
+  document.getElementById('live-txt').textContent=`${confluenceAgents.length} agentes · ${d} depts`;
 }
 
-// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+// WS
 let ws,retryT;
 function connect(){
   ws=new WebSocket(`ws://${location.host}`);
@@ -539,62 +715,47 @@ function connect(){
   ws.onopen=()=>{b.textContent='⬤ conectado';b.className='ok';clearTimeout(retryT);};
   ws.onmessage=e=>{
     const m=JSON.parse(e.data);
-    if(m.type==='confluence_agents'){
-      agents=m.agents;
-      buildDeptNav();updateLive();
-      renderOverview();
-      if(currentDept!==null) renderRoomView();
-    }
-    updateLive();
+    if(m.type==='confluence_agents'&&m.agents.length){confluenceAgents=m.agents;initWorld();}
   };
   ws.onclose=()=>{b.textContent='⬤ desconectado';b.className='err';retryT=setTimeout(connect,3000);};
 }
 async function loadAgents(){
-  try{
-    const r=await fetch('/api/confluence-agents');
-    const d=await r.json();
-    if(d.length){
-      agents=d;
-      buildDeptNav();updateLive();
-      renderOverview();
-    }
-  }catch{}
+  try{const r=await fetch('/api/confluence-agents');const d=await r.json();if(d.length){confluenceAgents=d;initWorld();}}catch{}
 }
 
-// ── CHAT ──────────────────────────────────────────────────────────────────────
+// Chat
+let chatHist=[],loading=false;
 function pushMsg(role,content,name,color,isErr){
-  const wrap=document.getElementById('messages'),div=document.createElement('div');
-  div.className=`msg ${role}`;
-  if(role==='assistant'){div.innerHTML=`<div class="msg-meta"><div class="msg-av" style="background:${(color||'#1c2035')}33;border:1px solid ${color||'#2a3050'}55">🏢</div><span class="msg-who" style="color:${color||'#1adb8a'}">${name||'Oficina'}</span></div><div class="msg-body${isErr?' msg-err':''}">${esc(content)}</div>`;}
-  else{div.innerHTML=`<div class="msg-body">${esc(content)}</div>`;}
-  wrap.appendChild(div);wrap.scrollTop=wrap.scrollHeight;return div;
+  const w=document.getElementById('messages'),d=document.createElement('div');
+  d.className=`msg ${role}`;
+  if(role==='assistant'){d.innerHTML=`<div class="msg-meta"><div class="msg-av" style="background:${(color||'#1c2035')}33;border:1px solid ${color||'#2a3050'}55">🏢</div><span class="msg-who" style="color:${color||'#1adb8a'}">${name||'Oficina'}</span></div><div class="msg-body${isErr?' msg-err':''}">${esc(content)}</div>`;}
+  else{d.innerHTML=`<div class="msg-body">${esc(content)}</div>`;}
+  w.appendChild(d);w.scrollTop=w.scrollHeight;return d;
 }
 async function sendMsg(){
   const el=document.getElementById('inp'),txt=el.value.trim();if(!txt||loading)return;
   el.value='';loading=true;document.getElementById('send').disabled=true;
   pushMsg('user',txt);chatHist.push({role:'user',content:txt});
-  const list=agents.map(a=>`- "${a.nombre}" (${a.departamento||'?'}, ${a.persona||'?'}): ${a.descripcion}`).join('\n');
-  const sys=`Eres el asistente de la Oficina Virtual VisualNacert. Conoces todos los agentes IA del equipo.\nAGENTES (${agents.length}):\n${list}\nResponde en español. Si preguntan quién hace algo, di nombre del agente, departamento y responsable. Sé conciso y útil.`;
-  const ldiv=pushMsg('assistant','…','Oficina','#1adb8a');
-  ldiv.querySelector('.msg-body').style.animation='blink 0.8s infinite';
+  const list=confluenceAgents.map(a=>`- "${a.nombre}" (${a.departamento||'?'}, ${a.persona||'?'}): ${a.descripcion}`).join('\n');
+  const sys=`Eres el asistente de la Oficina Virtual VisualNacert. Agentes:\n${list}\nResponde en español, conciso.`;
+  const ld=pushMsg('assistant','…','Oficina','#1adb8a');
+  ld.querySelector('.msg-body').style.animation='blink 0.8s infinite';
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:sys,messages:chatHist.slice(-10)})});
-    const d=await r.json();
-    ldiv.querySelector('.msg-body').style.animation='';
-    if(d.error){ldiv.querySelector('.msg-body').classList.add('msg-err');ldiv.querySelector('.msg-body').innerHTML=esc(d.error);}
-    else{const rep=d.content?.find(b=>b.type==='text')?.text||'Sin respuesta.';ldiv.querySelector('.msg-body').innerHTML=esc(rep);chatHist.push({role:'assistant',content:rep});}
-  }catch{ldiv.querySelector('.msg-body').classList.add('msg-err');ldiv.querySelector('.msg-body').innerHTML='❌ Error.';}
+    const d=await r.json();ld.querySelector('.msg-body').style.animation='';
+    if(d.error){ld.querySelector('.msg-body').classList.add('msg-err');ld.querySelector('.msg-body').innerHTML=esc(d.error);}
+    else{const rep=d.content?.find(b=>b.type==='text')?.text||'…';ld.querySelector('.msg-body').innerHTML=esc(rep);chatHist.push({role:'assistant',content:rep});}
+  }catch{ld.querySelector('.msg-body').classList.add('msg-err');ld.querySelector('.msg-body').innerHTML='❌ Error.';}
   loading=false;document.getElementById('send').disabled=false;
 }
 document.getElementById('send').onclick=sendMsg;
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 
-// ── BOOT ──────────────────────────────────────────────────────────────────────
-pushMsg('assistant','👋 Bienvenido/a a la Oficina Virtual de VisualNacert.\n\nHaz clic en una sala para entrar. Clic en un agente para ver qué hace.','Oficina','#1adb8a');
-preload();
-loadAgents();
-connect();
+// Boot
+pushMsg('assistant','👋 Oficina Virtual VisualNacert\n\nLos agentes IA se mueven solos. 🖱 Arrastra · Rueda zoom · Clic en agente.','Oficina','#1adb8a');
+loadTilesets().then(()=>{ loadAgents(); connect(); });
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
