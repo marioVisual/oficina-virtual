@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Claude Office — VisualNacert</title>
 <style>
-:root{
-  --bg:#0a0b0f;--bg2:#0e1018;--bg3:#13151f;--inp:#1a1d2a;
-  --b:#1e2235;--bhi:#2c3055;
-  --green:#1adb8a;--blue:#4a8fff;--amber:#f0a020;--red:#e24b4a;
-  --purple:#a78bfa;--cyan:#22d3ee;--pink:#f472b6;
-  --text:#e2e5f0;--dim:#4a5070;--mid:#8890b0;
-}
+:root{--bg:#07080d;--bg2:#0e1018;--bg3:#13151f;--inp:#1a1d2a;--b:#1e2235;--bhi:#2c3055;--green:#1adb8a;--blue:#4a8fff;--amber:#f0a020;--red:#e24b4a;--text:#e2e5f0;--dim:#4a5070;--mid:#8890b0;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;display:flex;flex-direction:column}
@@ -27,15 +21,15 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 #nav-title{font-size:7px;color:var(--dim);letter-spacing:2px;padding:10px 12px 6px;text-transform:uppercase}
 .dept-btn{display:flex;align-items:center;gap:7px;padding:6px 12px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Courier New',monospace;border-left:2px solid transparent;transition:all .1s}
 .dept-btn:hover{background:var(--bg3)}.dept-btn.active{background:var(--bg3);border-left-color:var(--dc)}
-.d-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}.d-name{font-size:9px;color:var(--mid);flex:1}.d-name.hi{color:var(--text);font-weight:bold}.d-cnt{font-size:7px;color:var(--dim)}
+.d-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}.d-name{font-size:9px;color:var(--mid);flex:1}.d-cnt{font-size:7px;color:var(--dim)}
 #zoom-controls{padding:8px 12px;border-top:1px solid var(--b);display:flex;gap:4px;margin-top:auto;flex-shrink:0}
-.zoom-btn{flex:1;padding:4px;background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;color:var(--mid);cursor:pointer;font-size:11px;font-family:monospace}
-.zoom-btn:hover{color:var(--text);border-color:var(--bhi)}
-#office-wrap{flex:1;position:relative;overflow:hidden;background:#1a2410}
-#map-canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;cursor:grab}
+.zoom-btn{flex:1;padding:4px;background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;color:var(--mid);cursor:pointer;font-size:11px}
+.zoom-btn:hover{color:var(--text)}
+#office-wrap{flex:1;position:relative;overflow:hidden;background:#5a8a30}
+#map-canvas{display:block;image-rendering:pixelated;cursor:grab}
 #map-canvas:active{cursor:grabbing}
 #conn-badge{position:absolute;top:8px;right:10px;font-size:8px;padding:3px 9px;border-radius:8px;background:rgba(5,6,11,0.9);border:0.5px solid var(--b);z-index:10}
-#conn-badge.ok{color:var(--green);border-color:#0a4a30}.#conn-badge.err{color:var(--red);border-color:var(--red)}
+#conn-badge.ok{color:var(--green);border-color:#0a4a30}.#conn-badge.err{color:var(--red)}
 #ap{position:absolute;left:10px;bottom:10px;width:280px;background:rgba(5,6,11,0.97);border:1px solid var(--bhi);border-radius:10px;padding:14px 16px;display:none;z-index:20;backdrop-filter:blur(8px)}
 #ap.on{display:block}
 #ap-dept{font-size:8px;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;font-weight:bold}
@@ -115,213 +109,333 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TILE ENGINE
+// TILESET — village.png + grasslands.png, 16px source tiles
 // ═══════════════════════════════════════════════════════════════════════════
-const TS = 16; // world tile size
-const SCALE = 2; // render scale (32px per tile on screen)
-const RST = TS * SCALE; // rendered tile size = 32px
+const TS = 16; // source tile px
+const RS = 16; // 1:1 pixel art scale, camera zooms
 
-const TILE = { EMPTY:0, GRASS:1, FLOOR:2, WALL:3, WALL_H:4, WALL_V:5,
-               DESK:6, PLANT:7, DOOR:8, PATH:9, TREE:10, SHELF:11 };
-const BLOCKED = new Set([TILE.WALL, TILE.WALL_H, TILE.WALL_V, TILE.DESK, TILE.PLANT, TILE.TREE, TILE.SHELF, TILE.EMPTY]);
+const SH = {}; // loaded images
+function loadSH(k,src){ SH[k]=new Image(); SH[k].src=src; return new Promise(r=>{SH[k].onload=r;SH[k].onerror=r;}); }
 
-const DC = {Cargas:'#22d3ee',Datos:'#a78bfa',Apps:'#1adb8a',Back:'#f0a020',Sistemas:'#4a8fff',Front:'#f472b6','':'#8890b0'};
+// blit: draw from spritesheet
+function B(ctx,sheet,sx,sy,dx,dy,sw=1,sh=1){
+  const img=SH[sheet];
+  if(!img?.complete||!img.naturalWidth) return false;
+  ctx.drawImage(img,sx*TS,sy*TS,sw*TS,sh*TS,dx,dy,sw*RS,sh*RS);
+  return true;
+}
+
+// blitPNG: draw from pre-extracted transparent PNG
+const PNG_CACHE={};
+function blitPNG(ctx,name,dx,dy,dw,dh){
+  if(!PNG_CACHE[name]){
+    PNG_CACHE[name]=new Image();
+    PNG_CACHE[name].src=`/assets/tiles/${name}.png`;
+  }
+  const img=PNG_CACHE[name];
+  if(!img.complete||!img.naturalWidth) return false;
+  ctx.drawImage(img,dx,dy,dw||img.naturalWidth,dh||img.naturalHeight);
+  return true;
+}
+
+// Tile IDs
+const T={
+  VOID:0,
+  GRASS:1,       // village (2,0) light green
+  GRASS2:2,      // village (3,0) slight variant
+  GRASS_G:3,     // grasslands (8,0) darker green
+  FLOOR:4,       // village (14,0) beige interior
+  FLOOR2:5,      // village (15,0) alt floor
+  PATH:6,        // village (22,0) stone path
+  // Wall border tiles — the dark stone border set
+  W_TL:7,  W_T:8,  W_TR:9,   // top row
+  W_L:10,         W_R:11,    // sides
+  W_BL:12, W_B:13,W_BR:14,   // bottom row
+  // Inner corner walls
+  W_ITL:15,W_ITR:16,W_IBL:17,W_IBR:18,
+  // Furniture (rendered as sprites, not tiles)
+  DESK:20, SHELF:21, PLANT:22, SOFA:23, MONITOR:24,
+  // Blocked but transparent
+  BLOCK:30
+};
+
+const BLOCKED=new Set([T.VOID,T.W_TL,T.W_T,T.W_TR,T.W_L,T.W_R,T.W_BL,T.W_B,T.W_BR,T.W_ITL,T.W_ITR,T.W_IBL,T.W_IBR,T.DESK,T.SHELF,T.PLANT,T.SOFA,T.BLOCK]);
+
+// Dept colors
+const DC={Cargas:'#22d3ee',Datos:'#a78bfa',Apps:'#1adb8a',Back:'#f0a020',Sistemas:'#4a8fff',Front:'#f472b6','':'#8890b0'};
 function dc(d){return DC[d]||'#8890b0';}
 
-// ─── TILESET IMAGES ───────────────────────────────────────────────────────
-const IMGS = {};
-const TILE_SRC = {
-  village:    '/assets/tilesets/village.png',
-  grasslands: '/assets/tilesets/grasslands.png',
-  ground:     '/assets/tilesets/ground.png',
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// TILE RENDERER
+// Uses exact spritesheet coordinates confirmed from analysis
+// ═══════════════════════════════════════════════════════════════════════════
+function drawTile(ctx, t, px, py, deptColor){
+  // Fallback colors matching the tileset visually
+  const FB={
+    [T.VOID]:'#3a5a18',
+    [T.GRASS]:'#8ab040',    // light green
+    [T.GRASS2]:'#7aa030',
+    [T.GRASS_G]:'#5a8a20',  // darker green exterior
+    [T.FLOOR]:'#e5c088',    // warm beige
+    [T.FLOOR2]:'#ddb878',
+    [T.PATH]:'#a09060',     // stone grey-brown
+    [T.W_TL]:'#1a1a1a',[T.W_T]:'#202020',[T.W_TR]:'#1a1a1a',
+    [T.W_L]:'#181818',[T.W_R]:'#181818',
+    [T.W_BL]:'#1a1a1a',[T.W_B]:'#202020',[T.W_BR]:'#1a1a1a',
+    [T.W_ITL]:'#222',[T.W_ITR]:'#222',[T.W_IBL]:'#222',[T.W_IBR]:'#222',
+    [T.DESK]:'#8a6040',[T.SHELF]:'#705030',
+    [T.PLANT]:'#2a6a10',[T.SOFA]:'#6050a0',
+  };
 
-// Tile definitions: {sheet, sx, sy, sw, sh} in source pixels (16px tiles)
-const TILE_DEFS = {
-  [TILE.GRASS]:  {sheet:'village', sx:2*TS, sy:0,     sw:TS, sh:TS},
-  [TILE.FLOOR]:  {sheet:'village', sx:14*TS,sy:0,     sw:TS, sh:TS},
-  [TILE.WALL]:   {sheet:'village', sx:22*TS,sy:0,     sw:TS, sh:TS},
-  [TILE.WALL_H]: {sheet:'village', sx:23*TS,sy:0,     sw:TS, sh:TS},
-  [TILE.WALL_V]: {sheet:'village', sx:25*TS,sy:0,     sw:TS, sh:TS},
-  [TILE.PATH]:   {sheet:'village', sx:16*TS,sy:0,     sw:TS, sh:TS},
-  [TILE.PLANT]:  {sheet:'village', sx:2*TS, sy:0,     sw:TS, sh:TS}, // grass reused
-  [TILE.DOOR]:   {sheet:'village', sx:14*TS,sy:1*TS,  sw:TS, sh:TS},
-};
-// Multi-tile sprites (drawn on top of floor)
-const SPRITE_DEFS = {
-  desk:  {sheet:'village', sx:0,      sy:8*TS, sw:4*TS, sh:4*TS, tw:2, th:2},
-  desk2: {sheet:'village', sx:4*TS,   sy:8*TS, sw:4*TS, sh:4*TS, tw:2, th:2},
-  shelf: {sheet:'village', sx:0,      sy:12*TS,sw:4*TS, sh:4*TS, tw:2, th:2},
-  plant: {sheet:'grasslands',sx:0,    sy:0,    sw:2*TS, sh:2*TS, tw:1, th:1},
-};
-
-let tilesLoaded = false;
-async function loadTilesets(){
-  return Promise.all(Object.entries(TILE_SRC).map(([k,src])=>new Promise(res=>{
-    const img=new Image(); img.onload=()=>{IMGS[k]=img;res();}; img.onerror=res;
-    img.src=src;
-  }))).then(()=>{ tilesLoaded=true; });
+  let drawn = false;
+  switch(t){
+    case T.GRASS:  drawn=B(ctx,'v',2,0,px,py); break;
+    case T.GRASS2: drawn=B(ctx,'v',3,0,px,py); break;
+    case T.GRASS_G:drawn=B(ctx,'g',8,0,px,py); break;
+    case T.FLOOR:  drawn=B(ctx,'v',14,0,px,py); break;
+    case T.FLOOR2: drawn=B(ctx,'v',15,0,px,py); break;
+    case T.PATH:   drawn=B(ctx,'v',22,0,px,py); break;
+    // Wall border — using the stone wall tiles from village rows 2-7
+    // These form a complete bordered wall set
+    case T.W_TL:  drawn=B(ctx,'v',2,2,px,py); break;
+    case T.W_T:   drawn=B(ctx,'v',4,2,px,py); break;
+    case T.W_TR:  drawn=B(ctx,'v',10,2,px,py); break;
+    case T.W_L:   drawn=B(ctx,'v',2,4,px,py); break;
+    case T.W_R:   drawn=B(ctx,'v',10,4,px,py); break;
+    case T.W_BL:  drawn=B(ctx,'v',2,6,px,py); break;
+    case T.W_B:   drawn=B(ctx,'v',4,6,px,py); break;
+    case T.W_BR:  drawn=B(ctx,'v',10,6,px,py); break;
+    case T.W_ITL: drawn=B(ctx,'v',6,2,px,py); break;
+    case T.W_ITR: drawn=B(ctx,'v',8,2,px,py); break;
+    case T.W_IBL: drawn=B(ctx,'v',6,6,px,py); break;
+    case T.W_IBR: drawn=B(ctx,'v',8,6,px,py); break;
+    case T.VOID:
+      ctx.fillStyle=FB[T.GRASS_G]||'#3a5a18';
+      ctx.fillRect(px,py,RS,RS);
+      return;
+  }
+  if(!drawn){
+    ctx.fillStyle=FB[t]||'#555';
+    ctx.fillRect(px,py,RS,RS);
+    // Add subtle texture for walls
+    if(t>=T.W_TL&&t<=T.W_IBR){
+      ctx.fillStyle='rgba(0,0,0,0.3)';
+      ctx.fillRect(px+RS*0.1,py+RS*0.1,RS*0.8,RS*0.8);
+    }
+  }
+  // Floor dept tint
+  if((t===T.FLOOR||t===T.FLOOR2)&&deptColor){
+    ctx.fillStyle=deptColor+'12';
+    ctx.fillRect(px,py,RS,RS);
+  }
 }
 
-// ─── DRAW SINGLE TILE ──────────────────────────────────────────────────────
-function drawTile(ctx, tileType, dx, dy){
-  if(!tilesLoaded){ // fallback colored tiles
-    const colors={[TILE.GRASS]:'#4a6a2a',[TILE.FLOOR]:'#c4a882',[TILE.WALL]:'#5a5a6a',
-      [TILE.WALL_H]:'#6a6a7a',[TILE.WALL_V]:'#606070',[TILE.PATH]:'#b0a090',
-      [TILE.PLANT]:'#2a5a1a',[TILE.DOOR]:'#8a6a4a',[TILE.DESK]:'#7a5a3a',
-      [TILE.TREE]:'#2a6a1a',[TILE.SHELF]:'#8a6040'};
-    ctx.fillStyle=colors[tileType]||'#111'; ctx.fillRect(dx,dy,RST,RST); return;
-  }
-  const def=TILE_DEFS[tileType]; if(!def) return;
-  const img=IMGS[def.sheet]; if(!img) return;
-  ctx.drawImage(img, def.sx,def.sy,def.sw,def.sh, dx,dy,RST,RST);
-}
+// Draw furniture sprites using transparent PNGs
+function drawFurniture(ctx, type, px, py){
+  // Map furniture type to extracted PNG tile name
+  const PNG_MAP={
+    'desk':  'desk_a',
+    'desk2': 'desk_b',
+    'desk3': 'desk_c',
+    'desk4': 'desk_d',
+    'shelf': 'shelf_a',
+    'shelf2':'shelf_b',
+    'shelf3':'shelf_c',
+    'sofa':  'shelf_d',
+    'item1': 'item_a',
+    'item2': 'item_b',
+    'item3': 'item_c',
+    'furn1': 'furn_a',
+    'furn2': 'furn_b',
+    'furn3': 'furn_c',
+    'plant_s':'bush_a',
+    'plant2': 'bush_b',
+    'plant3': 'bush_c',
+  };
+  const pngName=PNG_MAP[type];
+  const sz2=RS*2, sz4=RS*4;
+  const isLarge=['desk','desk2','desk3','desk4','shelf','shelf2','shelf3','sofa','item1','item2','item3','furn1','furn2','furn3'].includes(type);
+  const sz=isLarge?sz2:RS;
 
-// ─── DRAW SPRITE OBJECT ────────────────────────────────────────────────────
-function drawSprite(ctx, spriteName, dx, dy){
-  const def=SPRITE_DEFS[spriteName]; if(!def) return;
-  if(!tilesLoaded){
-    ctx.fillStyle='#7a5a3a'; ctx.fillRect(dx,dy,def.tw*RST,def.th*RST); return;
-  }
-  const img=IMGS[def.sheet]; if(!img) return;
-  ctx.drawImage(img, def.sx,def.sy,def.sw,def.sh, dx,dy,def.tw*RST,def.th*RST);
+  if(pngName && blitPNG(ctx,pngName,px,py,sz,sz)) return;
+
+  // Fallback
+  const C={desk:'#8a6040',desk2:'#7a5030',shelf:'#705030',sofa:'#5040a0',plant_s:'#2a7a10'};
+  ctx.fillStyle=C[type]||'#555';
+  ctx.fillRect(px,py,sz,sz);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MAP GENERATION
+// MAP BUILDER — fixed layout matching reference image style
 // ═══════════════════════════════════════════════════════════════════════════
-const ROOM_W=18, ROOM_H=14;
-const CORR_H=4, CORR_V=4;
+// Room dimensions (in tiles)
+const RW=22, RH=15;   // room width/height
+const GAP_X=4;        // corridor width between cols
+const GAP_Y=3;        // corridor height between rows
+const MARGIN=3;       // outer border
 const COLS=2;
+
+function makeRoom(){
+  const g=Array.from({length:RH},(_,y)=>
+    Array.from({length:RW},(_,x)=>{
+      if(y===0){if(x===0)return T.W_TL;if(x===RW-1)return T.W_TR;return T.W_T;}
+      if(y===RH-1){if(x===0)return T.W_BL;if(x===RW-1)return T.W_BR;return T.W_B;}
+      if(x===0)return T.W_L;if(x===RW-1)return T.W_R;
+      return T.FLOOR;
+    })
+  );
+
+  const furniture=[], desks=[], walkable=[];
+  const deskTypes=['desk','desk2','desk3','desk4'];
+
+  // 3 cols x 2 rows of desks
+  [[2,2],[7,2],[13,2],[2,9],[7,9],[13,9]].forEach(([dx,dy],i)=>{
+    if(dx+2<RW-1&&dy+2<RH-1){
+      g[dy][dx]=T.BLOCK;g[dy][dx+1]=T.BLOCK;
+      g[dy+1][dx]=T.BLOCK;g[dy+1][dx+1]=T.BLOCK;
+      desks.push({lx:dx,ly:dy});
+      furniture.push({type:deskTypes[i%deskTypes.length],lx:dx,ly:dy});
+    }
+  });
+
+  // Shelves on back-right
+  [[RW-3,1,'shelf'],[RW-3,4,'shelf2']].forEach(([sx,sy,type])=>{
+    if(sx+2<RW-1){
+      g[sy][sx]=T.BLOCK;g[sy][sx+1]=T.BLOCK;
+      g[sy+1][sx]=T.BLOCK;g[sy+1][sx+1]=T.BLOCK;
+      furniture.push({type,lx:sx,ly:sy});
+    }
+  });
+
+  // Sofa corner bottom-right
+  const sfx=RW-5,sfy=RH-4;
+  if(sfx>0&&sfy>0){
+    g[sfy][sfx]=T.BLOCK;g[sfy][sfx+1]=T.BLOCK;
+    g[sfy+1][sfx]=T.BLOCK;g[sfy+1][sfx+1]=T.BLOCK;
+    furniture.push({type:'sofa',lx:sfx,ly:sfy});
+  }
+
+  // Extra item bottom-left
+  const itx=2, ity=RH-4;
+  if(ity>0){
+    g[ity][itx]=T.BLOCK;g[ity][itx+1]=T.BLOCK;
+    g[ity+1][itx]=T.BLOCK;g[ity+1][itx+1]=T.BLOCK;
+    furniture.push({type:'item1',lx:itx,ly:ity});
+  }
+
+  // Plants in all corners
+  [[1,1,'plant_s'],[RW-2,1,'plant2'],[1,RH-2,'plant3'],[RW-2,RH-2,'plant_s']].forEach(([px,py,type])=>{
+    g[py][px]=T.PLANT;
+    furniture.push({type,lx:px,ly:py});
+  });
+
+  // Door openings
+  const mx=Math.floor(RW/2);
+  g[RH-1][mx-1]=T.FLOOR;g[RH-1][mx]=T.FLOOR;
+  const my=Math.floor(RH/2);
+  g[my][RW-1]=T.FLOOR;g[my+1][RW-1]=T.FLOOR;
+
+  // Collect walkable
+  for(let y=1;y<RH-1;y++)
+    for(let x=1;x<RW-1;x++)
+      if(!BLOCKED.has(g[y][x])) walkable.push({lx:x,ly:y});
+
+  return{grid:g,furniture,desks,walkable};
+}
+
 
 function buildMap(depts){
   const rows=Math.ceil(depts.length/COLS);
-  const mapW=COLS*ROOM_W+CORR_V*(COLS-1)+6;
-  const mapH=rows*ROOM_H+CORR_H*(rows-1)+6;
+  const mapW=MARGIN*2+COLS*RW+(COLS-1)*GAP_X;
+  const mapH=MARGIN*2+rows*RH+(rows-1)*GAP_Y;
 
-  // Fill with grass
-  const map=Array.from({length:mapH},()=>new Uint8Array(mapW).fill(TILE.GRASS));
-  const rooms=[];
-  // Sprites to draw on top (positioned furniture)
-  const furnitures=[]; // {sprite,tx,ty}
+  // Fill with exterior grass
+  const map=Array.from({length:mapH},(_,y)=>
+    Array.from({length:mapW},(_,x)=>T.GRASS)
+  );
+
+  const rooms=[], allFurniture=[];
 
   depts.forEach((dept,i)=>{
     const col=i%COLS, row=Math.floor(i/COLS);
-    const rx=3+col*(ROOM_W+CORR_V);
-    const ry=3+row*(ROOM_H+CORR_H);
-    const room=buildRoom(map,dept,rx,ry,furnitures);
-    rooms.push(room);
+    const offX=MARGIN+col*(RW+GAP_X);
+    const offY=MARGIN+row*(RH+GAP_Y);
 
-    // Corridor right
-    if(col===0 && i+1<depts.length){
-      for(let cv=0;cv<CORR_V;cv++)
-        for(let cy=ry+3;cy<ry+ROOM_H-3;cy++)
-          if(map[cy]) map[cy][rx+ROOM_W+cv]=TILE.PATH;
+    const roomDef=makeRoom();
+    rooms.push({dept,offX,offY,rw:RW,rh:RH,
+      walkable:roomDef.walkable.map(({lx,ly})=>({tx:offX+lx,ty:offY+ly})),
+      desks:roomDef.furniture.filter(f=>f.type.startsWith('desk'))
+            .map(f=>({tx:offX+f.lx,ty:offY+f.ly})),
+    });
+
+    // Place room tiles into map
+    for(let y=0;y<RH;y++)
+      for(let x=0;x<RW;x++)
+        map[offY+y][offX+x]=roomDef.grid[y][x];
+
+    // Furniture
+    roomDef.furniture.forEach(f=>{
+      allFurniture.push({type:f.type,tx:offX+f.lx,ty:offY+f.ly,dept});
+    });
+
+    // Horizontal corridor to next col
+    if(col===0&&i+1<depts.length){
+      const midY=offY+Math.floor(RH/2);
+      for(let gx=offX+RW;gx<offX+RW+GAP_X;gx++){
+        map[midY][gx]=T.PATH;
+        map[midY+1][gx]=T.PATH;
+        // Grass border around corridor
+        if(map[midY-1]) map[midY-1][gx]=T.GRASS2;
+        if(map[midY+2]) map[midY+2][gx]=T.GRASS2;
+      }
     }
-    // Corridor down
+    // Vertical corridor to next row
     if(row>0){
-      const pry=3+(row-1)*(ROOM_H+CORR_H);
-      for(let cx=rx+4;cx<rx+ROOM_W-4;cx++)
-        for(let ch=0;ch<CORR_H;ch++)
-          if(map[pry+ROOM_H+ch]) map[pry+ROOM_H+ch][cx]=TILE.PATH;
+      const prevOffY=MARGIN+(row-1)*(RH+GAP_Y);
+      const midX=offX+Math.floor(RW/2);
+      for(let gy=prevOffY+RH;gy<prevOffY+RH+GAP_Y;gy++){
+        map[gy][midX]=T.PATH;
+        map[gy][midX+1]=T.PATH;
+        if(map[gy][midX-1]!==T.PATH) map[gy][midX-1]=T.GRASS2;
+        if(map[gy][midX+2]!==T.PATH) map[gy][midX+2]=T.GRASS2;
+      }
     }
   });
 
-  // Border trees
-  for(let x=0;x<mapW;x++){
-    if(map[0]) map[0][x]=TILE.TREE;
-    if(map[1]) map[1][x]=TILE.TREE;
-    if(map[mapH-1]) map[mapH-1][x]=TILE.TREE;
-    if(map[mapH-2]) map[mapH-2][x]=TILE.TREE;
-  }
-  for(let y=0;y<mapH;y++){
-    if(map[y]){map[y][0]=TILE.TREE;map[y][1]=TILE.TREE;map[y][mapW-1]=TILE.TREE;map[y][mapW-2]=TILE.TREE;}
-  }
+  // Add trees around border
+  for(let y=0;y<mapH;y++)
+    for(let x=0;x<mapW;x++)
+      if(map[y][x]===T.GRASS&&(x===0||x===mapW-1||y===0||y===mapH-1))
+        map[y][x]=T.GRASS_G;
 
-  return {map,mapW,mapH,rooms,furnitures};
-}
-
-function buildRoom(map,dept,rx,ry,furnitures){
-  const desks=[], walkable=[];
-  const RW=ROOM_W, RH=ROOM_H;
-
-  // Floor
-  for(let y=ry+1;y<ry+RH-1;y++)
-    for(let x=rx+1;x<rx+RW-1;x++)
-      if(map[y]) map[y][x]=TILE.FLOOR;
-
-  // Walls
-  for(let x=rx;x<rx+RW;x++){if(map[ry])map[ry][x]=TILE.WALL_H;if(map[ry+RH-1])map[ry+RH-1][x]=TILE.WALL_H;}
-  for(let y=ry;y<ry+RH;y++){if(map[y]){map[y][rx]=TILE.WALL_V;map[y][rx+RW-1]=TILE.WALL_V;}}
-  // Corners
-  if(map[ry]){map[ry][rx]=TILE.WALL;map[ry][rx+RW-1]=TILE.WALL;}
-  if(map[ry+RH-1]){map[ry+RH-1][rx]=TILE.WALL;map[ry+RH-1][rx+RW-1]=TILE.WALL;}
-
-  // Doors
-  if(map[ry+RH-1]){map[ry+RH-1][rx+Math.floor(RW/2)-1]=TILE.DOOR;map[ry+RH-1][rx+Math.floor(RW/2)]=TILE.DOOR;}
-  for(let y=ry+RH/2-2;y<ry+RH/2+2;y++) if(map[y]) map[y][rx+RW-1]=TILE.DOOR;
-
-  // Desk layout: 2 rows × 3 desks
-  const deskPositions=[
-    {tx:rx+2,ty:ry+2},{tx:rx+6,ty:ry+2},{tx:rx+10,ty:ry+2},
-    {tx:rx+2,ty:ry+7},{tx:rx+6,ty:ry+7},{tx:rx+10,ty:ry+7},
-  ];
-  deskPositions.forEach(({tx,ty})=>{
-    if(tx+2<rx+RW-1&&ty+2<ry+RH-1){
-      // Mark 2×2 as blocked
-      for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++) if(map[ty+dy]) map[ty+dy][tx+dx]=TILE.DESK;
-      desks.push({tx,ty});
-      furnitures.push({sprite:Math.random()>0.4?'desk':'desk2',tx,ty});
-    }
-  });
-
-  // Plants in corners
-  [[rx+1,ry+1],[rx+RW-3,ry+1],[rx+1,ry+RH-3]].forEach(([x,y])=>{
-    if(map[y]&&map[y][x]===TILE.FLOOR){map[y][x]=TILE.PLANT;map[y+1]&&(map[y+1][x]=TILE.PLANT);}
-    furnitures.push({sprite:'plant',tx:x,ty:y});
-  });
-
-  // Shelf on one wall
-  const shelfX=rx+RW-4, shelfY=ry+2;
-  if(shelfX+2<rx+RW-1){
-    for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++) if(map[shelfY+dy]) map[shelfY+dy][shelfX+dx]=TILE.SHELF;
-    furnitures.push({sprite:'shelf',tx:shelfX,ty:shelfY});
-  }
-
-  // Walkable tiles
-  for(let y=ry+1;y<ry+RH-1;y++)
-    for(let x=rx+1;x<rx+RW-1;x++)
-      if(map[y]&&!BLOCKED.has(map[y][x])) walkable.push({tx:x,ty:y});
-
-  return {dept,rx,ry,rw:RW,rh:RH,desks,walkable};
+  return{map,mapW,mapH,rooms,furniture:allFurniture};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// A* PATHFINDING
+// A*
 // ═══════════════════════════════════════════════════════════════════════════
-function astar(map,mapW,mapH,sx,sy,ex,ey){
-  const key=(x,y)=>y*mapW+x;
-  const walkable=(x,y)=>x>=0&&y>=0&&x<mapW&&y<mapH&&!BLOCKED.has(map[y]?.[x]??TILE.WALL);
-  if(!walkable(ex,ey)) return [];
+function astar(map,W,H,sx,sy,ex,ey){
+  const K=(x,y)=>y*W+x;
+  const ok=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&!BLOCKED.has(map[y]?.[x]??T.VOID);
+  if(!ok(ex,ey))return[];
   const open=new Map(),closed=new Set(),g={},f={},par={};
   const h=(x,y)=>Math.abs(x-ex)+Math.abs(y-ey);
-  const sk=key(sx,sy); g[sk]=0; f[sk]=h(sx,sy); open.set(sk,{x:sx,y:sy});
+  g[K(sx,sy)]=0;f[K(sx,sy)]=h(sx,sy);open.set(K(sx,sy),{x:sx,y:sy});
   let iter=0;
   while(open.size&&iter++<3000){
     let cur=null,best=Infinity;
-    for(const[k,n]of open){const fv=f[k]??Infinity;if(fv<best){best=fv;cur=n;}}
+    for(const[k,n]of open){const v=f[k]??Infinity;if(v<best){best=v;cur=n;}}
     if(!cur)break;
-    const ck=key(cur.x,cur.y);
+    const ck=K(cur.x,cur.y);
     if(cur.x===ex&&cur.y===ey){
-      const path=[];let n=cur;
-      while(par[key(n.x,n.y)]){path.unshift({...n});n=par[key(n.x,n.y)];}
-      return path;
+      const p=[];let n=cur;
+      while(par[K(n.x,n.y)]){p.unshift({...n});n=par[K(n.x,n.y)];}
+      return p;
     }
     open.delete(ck);closed.add(ck);
     for(const[dx,dy]of[[0,-1],[0,1],[-1,0],[1,0]]){
-      const nx=cur.x+dx,ny=cur.y+dy;
-      if(!walkable(nx,ny))continue;
-      const nk=key(nx,ny);if(closed.has(nk))continue;
+      const nx=cur.x+dx,ny=cur.y+dy;if(!ok(nx,ny))continue;
+      const nk=K(nx,ny);if(closed.has(nk))continue;
       const ng=(g[ck]??0)+1;
       if(!open.has(nk)||ng<(g[nk]??Infinity)){
         par[nk]=cur;g[nk]=ng;f[nk]=ng+h(nx,ny);open.set(nk,{x:nx,y:ny});
@@ -335,353 +449,343 @@ function astar(map,mapW,mapH,sx,sy,ex,ey){
 // AGENT
 // ═══════════════════════════════════════════════════════════════════════════
 const SKINS=['#FDBCB4','#EAA882','#D4956A','#C68642','#A0522D'];
-const HAIR_C=['#2C2C2A','#5C3A1E','#8B6914','#D4A017','#C0392B','#E0E0E0'];
+const HAIRS=['#2C2C2A','#5C3A1E','#8B6914','#D4A017','#C0392B','#E0E0E0'];
+const SHIRTS=['#185FA5','#1adb8a','#e24b4a','#f0a020','#a78bfa','#f472b6','#22d3ee','#222','#eee'];
 
 class Agent{
-  constructor(data,room,mapData){
-    this.nombre=data.nombre; this.dept=data.departamento||'';
-    this.persona=data.persona||'—'; this.descripcion=data.descripcion||'';
-    this.url=data.url||null; this.room=room; this.mapData=mapData;
-    this.state='idle'; this.path=[]; this.facing=Math.random()*Math.PI*2;
+  constructor(data,room,md){
+    this.nombre=data.nombre;this.dept=data.departamento||'';
+    this.persona=data.persona||'—';this.descripcion=data.descripcion||'';
+    this.url=data.url||null;this.room=room;this.md=md;
+    this.state='idle';this.path=[];this.facing=0;
     const h=[...this.nombre].reduce((a,c)=>a+c.charCodeAt(0),0);
-    this.skin=SKINS[h%SKINS.length]; this.hairCol=HAIR_C[(h*3)%HAIR_C.length];
+    this.skin=SKINS[h%SKINS.length];
+    this.hair=HAIRS[(h*3)%HAIRS.length];
+    this.shirt=SHIRTS[(h*7)%SHIRTS.length];
     const s=room.walkable[Math.floor(Math.random()*room.walkable.length)];
-    this.tx=s.tx; this.ty=s.ty;
-    this.wx=(this.tx+0.5)*RST; this.wy=(this.ty+0.5)*RST;  // world px
-    this.stateTimer=0; this.nextAction=Math.random()*200;
-    this.workDesk=null; this.chatPartner=null;
-    this._hx=0;this._hy=0;this._hr=16;
+    this.tx=s.tx;this.ty=s.ty;
+    this.wx=(this.tx+0.5)*RS;this.wy=(this.ty+0.5)*RS;
+    this.nextAction=Math.random()*200;this.stateTimer=0;
+    this.workDesk=null;this._hx=0;this._hy=0;this._hr=12;
+    this.walkFrame=0;this.walkTimer=0;
+  }
+
+  update(dt,all){
+    this.stateTimer-=dt;
+    if(this.state==='chatting'){
+      if(this.stateTimer<=0){this.state='idle';this.nextAction=30+Math.random()*60;}
+      return;
+    }
+    if(this.state==='idle'||this.state==='working'){
+      this.nextAction-=dt;
+      if(this.nextAction<=0){
+        const dest=this.pickDest(all);
+        if(dest){
+          const p=astar(this.md.map,this.md.mapW,this.md.mapH,this.tx,this.ty,dest.tx,dest.ty);
+          if(p.length){this.path=[...p];this.state='walking';}
+        }
+        this.nextAction=80+Math.random()*240;
+      }
+      if(this.state==='idle'&&Math.random()<0.002){
+        const nb=all.find(a=>a!==this&&Math.hypot(a.wx-this.wx,a.wy-this.wy)<RS*3&&a.state==='idle');
+        if(nb){this.state='chatting';nb.state='chatting';this.stateTimer=nb.stateTimer=60+Math.random()*100;}
+      }
+    }
+    if(this.state==='walking'&&this.path.length){
+      const nx=(this.path[0].x+0.5)*RS,ny=(this.path[0].y+0.5)*RS;
+      const dx=nx-this.wx,dy=ny-this.wy,dist=Math.hypot(dx,dy);
+      const spd=RS*0.025;
+      if(dist<spd){
+        this.wx=nx;this.wy=ny;this.tx=this.path[0].x;this.ty=this.path[0].y;
+        this.path.shift();
+        if(!this.path.length){this.state=this.workDesk?'working':'idle';this.nextAction=100+Math.random()*180;}
+      } else {
+        this.facing=Math.atan2(dy,dx);
+        this.wx+=Math.cos(this.facing)*spd;
+        this.wy+=Math.sin(this.facing)*spd;
+        this.walkTimer+=dt;
+        if(this.walkTimer>8){this.walkFrame=(this.walkFrame+1)%4;this.walkTimer=0;}
+      }
+    }
   }
 
   pickDest(all){
     const r=Math.random();
     if(r<0.45&&this.room.desks.length){
       const d=this.room.desks[Math.floor(Math.random()*this.room.desks.length)];
-      for(const [dx,dy] of [[0,2],[1,2],[0,-1],[-1,0],[2,0]]){
-        const tx=d.tx+dx,ty=d.ty+dy;
-        if(!BLOCKED.has(this.mapData.map[ty]?.[tx]??TILE.WALL)){this.workDesk=d;return{tx,ty};}
+      for(const[ox,oy]of[[0,2],[1,2],[0,-1],[-1,0],[2,0]]){
+        const tx=d.tx+ox,ty=d.ty+oy;
+        if(!BLOCKED.has(this.md.map[ty]?.[tx])){this.workDesk=d;return{tx,ty};}
       }
     }
-    if(r<0.72||this.room.walkable.length===0){
-      const w=this.room.walkable;
-      return w[Math.floor(Math.random()*w.length)];
-    }
-    // Visit another room
+    if(r<0.75){const w=this.room.walkable;return w[Math.floor(Math.random()*w.length)];}
     const others=all.filter(a=>a!==this&&a.room!==this.room);
-    if(others.length){
-      const or=others[Math.floor(Math.random()*others.length)].room;
-      const w=or.walkable;
-      return w[Math.floor(Math.random()*w.length)];
-    }
-    const w=this.room.walkable;
-    return w[Math.floor(Math.random()*w.length)];
+    if(others.length){const or=others[Math.floor(Math.random()*others.length)].room;return or.walkable[Math.floor(Math.random()*or.walkable.length)];}
+    return this.room.walkable[Math.floor(Math.random()*this.room.walkable.length)];
   }
 
-  update(dt,all){
-    this.stateTimer-=dt;
-    if(this.state==='chatting'){if(this.stateTimer<=0){this.state='idle';this.chatPartner=null;this.nextAction=20+Math.random()*60;}return;}
-    if(this.state==='idle'||this.state==='working'){
-      this.nextAction-=dt;
-      if(this.nextAction<=0){
-        const dest=this.pickDest(all);
-        if(dest){
-          const p=astar(this.mapData.map,this.mapData.mapW,this.mapData.mapH,this.tx,this.ty,dest.tx,dest.ty);
-          if(p.length){this.path=[...p];this.state='walking';}
-        }
-        this.nextAction=80+Math.random()*250;
-      }
-      // Chat check
-      if(this.state==='idle'&&Math.random()<0.003){
-        const nb=all.find(a=>a!==this&&Math.hypot(a.wx-this.wx,a.wy-this.wy)<RST*3&&a.state==='idle');
-        if(nb){this.state='chatting';this.chatPartner=nb;nb.state='chatting';nb.chatPartner=this;this.stateTimer=nb.stateTimer=60+Math.random()*100;}
-      }
-    }
-    if(this.state==='walking'&&this.path.length){
-      const nxt=this.path[0];
-      const tx=(nxt.x+0.5)*RST,ty=(nxt.y+0.5)*RST;
-      const dx=tx-this.wx,dy=ty-this.wy,dist=Math.hypot(dx,dy);
-      const spd=RST*0.06;
-      if(dist<spd){
-        this.wx=tx;this.wy=ty;this.tx=nxt.x;this.ty=nxt.y;
-        this.path.shift();
-        if(!this.path.length){this.state=this.workDesk?'working':'idle';this.nextAction=100+Math.random()*200;}
-      } else {
-        this.facing=Math.atan2(dy,dx);
-        this.wx+=Math.cos(this.facing)*spd;
-        this.wy+=Math.sin(this.facing)*spd;
-      }
-    }
-  }
-
-  draw(ctx, camX, camY, camScale, sel){
-    const sx=camX+this.wx*camScale, sy=camY+this.wy*camScale;
-    const r=Math.max(6,9*camScale);
-    const dC=dc(this.dept);
+  draw(ctx, sel){
+    const px=this.wx, py=this.wy;
+    const r=6; // sprite radius in world px
     const isSel=sel&&sel.nombre===this.nombre;
+    const dC=dc(this.dept);
 
     // Shadow
-    ctx.fillStyle='rgba(0,0,0,0.25)';
-    ctx.beginPath();ctx.ellipse(sx,sy+r*0.6,r*0.65,r*0.22,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.28)';
+    ctx.beginPath();ctx.ellipse(px,py+r*0.55,r*0.6,r*0.18,0,0,Math.PI*2);ctx.fill();
+
+    // Legs (walking animation)
+    const legOff=this.state==='walking'?Math.sin(this.walkFrame*Math.PI/2)*2.5:0;
+    ctx.fillStyle='#1e2840';
+    ctx.fillRect(px-r*0.35,py+r*0.1,r*0.3,r*0.7+legOff);
+    ctx.fillRect(px+r*0.05,py+r*0.1,r*0.3,r*0.7-legOff);
+    // Shoes
+    ctx.fillStyle='#111';
+    ctx.fillRect(px-r*0.4,py+r*0.75+legOff,r*0.38,r*0.2);
+    ctx.fillRect(px+r*0.02,py+r*0.75-legOff,r*0.38,r*0.2);
 
     // Body
-    ctx.fillStyle=isSel?dC:dC+'bb';
-    ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=this.shirt;
+    ctx.beginPath();ctx.roundRect(px-r*0.7,py-r*0.4,r*1.4,r*0.8,r*0.2);ctx.fill();
+    // Arms
+    const armOff=this.state==='walking'?Math.sin(this.walkFrame*Math.PI/2)*2:0;
+    ctx.fillStyle=this.shirt;
+    ctx.fillRect(px-r*0.9,py-r*0.35+armOff,r*0.25,r*0.6);
+    ctx.fillRect(px+r*0.65,py-r*0.35-armOff,r*0.25,r*0.6);
+    // Hands
+    ctx.fillStyle=this.skin;
+    ctx.beginPath();ctx.arc(px-r*0.82,py+r*0.3+armOff,r*0.15,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(px+r*0.82,py+r*0.3-armOff,r*0.15,0,Math.PI*2);ctx.fill();
+
+    // Neck
+    ctx.fillStyle=this.skin;
+    ctx.fillRect(px-r*0.2,py-r*0.65,r*0.4,r*0.3);
 
     // Head
     ctx.fillStyle=this.skin;
-    ctx.beginPath();ctx.arc(sx,sy-r*0.1,r*0.55,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(px,py-r*0.95,r*0.5,r*0.55,0,0,Math.PI*2);ctx.fill();
+    // Ear
+    ctx.beginPath();ctx.ellipse(px-r*0.52,py-r*0.9,r*0.1,r*0.15,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(px+r*0.52,py-r*0.9,r*0.1,r*0.15,0,0,Math.PI*2);ctx.fill();
 
     // Hair
-    ctx.fillStyle=this.hairCol;
-    ctx.beginPath();ctx.arc(sx,sy-r*0.18,r*0.45,Math.PI,Math.PI*2);ctx.fill();
+    ctx.fillStyle=this.hair;
+    ctx.beginPath();ctx.ellipse(px,py-r*1.25,r*0.5,r*0.35,0,0,Math.PI*2);ctx.fill();
+    ctx.fillRect(px-r*0.5,py-r*1.35,r*1.0,r*0.25);
 
     // Eyes
-    const eyeOff=r*0.14;
-    ctx.fillStyle='#222';
-    ctx.beginPath();ctx.arc(sx-eyeOff,sy-r*0.05,r*0.12,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(sx+eyeOff,sy-r*0.05,r*0.12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.ellipse(px-r*0.18,py-r*0.92,r*0.13,r*0.12,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(px+r*0.18,py-r*0.92,r*0.13,r*0.12,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1a1a2a';
+    ctx.beginPath();ctx.arc(px-r*0.16,py-r*0.92,r*0.08,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(px+r*0.2,py-r*0.92,r*0.08,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.beginPath();ctx.arc(px-r*0.13,py-r*0.95,r*0.04,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(px+r*0.23,py-r*0.95,r*0.04,0,Math.PI*2);ctx.fill();
 
-    // Walk direction arrow
-    if(this.state==='walking'){
-      ctx.save();ctx.translate(sx,sy);ctx.rotate(this.facing);
-      ctx.fillStyle='rgba(255,255,255,0.5)';
-      ctx.beginPath();ctx.moveTo(r+2,0);ctx.lineTo(r-2,-3);ctx.lineTo(r-2,3);ctx.closePath();ctx.fill();
-      ctx.restore();
+    // Selection ring
+    if(isSel){
+      ctx.strokeStyle=dC;ctx.lineWidth=2;
+      ctx.beginPath();ctx.ellipse(px,py,r*1.2,r*0.4,0,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle=dC+'88';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.ellipse(px,py-r*0.5,r*1.0,r*1.5,0,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
     }
-
-    // State ring
-    ctx.strokeStyle=isSel?'#ffffff':dC+'88';ctx.lineWidth=isSel?2.5:1;
-    ctx.beginPath();ctx.arc(sx,sy,r+2,0,Math.PI*2);ctx.stroke();
 
     // Status dot
-    const sc={idle:'#555',walking:dC,working:'#1adb8a',chatting:'#f0a020'}[this.state]||'#555';
-    ctx.fillStyle=sc;ctx.beginPath();ctx.arc(sx+r*0.7,sy-r*0.7,r*0.22,0,Math.PI*2);ctx.fill();
-
-    // Name tag when zoomed or selected
-    if(camScale>1.1||isSel){
-      const nm=this.nombre.length>14?this.nombre.slice(0,13)+'…':this.nombre;
-      ctx.font=`${Math.max(7,8*camScale)}px 'Courier New'`;
-      const tw=ctx.measureText(nm).width+8;
-      ctx.fillStyle='rgba(5,6,11,0.88)';ctx.strokeStyle=dC+'88';ctx.lineWidth=0.5;
-      ctx.beginPath();ctx.roundRect(sx-tw/2,sy+r+3,tw,11,2);ctx.stroke();ctx.fill();
-      ctx.fillStyle=isSel?dC:'#8890b0';ctx.textAlign='center';
-      ctx.fillText(nm,sx,sy+r+11);
-    }
+    ctx.fillStyle={idle:'#555',walking:dC,working:'#1adb8a',chatting:'#f0a020'}[this.state]||'#555';
+    ctx.beginPath();ctx.arc(px+r*0.75,py-r*1.4,r*0.2,0,Math.PI*2);ctx.fill();
 
     // Chat bubble
     if(this.state==='chatting'){
-      ctx.font=`${Math.max(9,10*camScale)}px serif`;ctx.textAlign='center';
-      ctx.fillText('💬',sx+r*0.8,sy-r*1.3);
+      ctx.fillStyle='rgba(240,160,32,0.95)';
+      ctx.beginPath();ctx.roundRect(px-r*0.5,py-r*2.1,r*1.0,r*0.6,2);ctx.fill();
+      ctx.fillStyle='#050810';ctx.font=`${r*0.5}px serif`;ctx.textAlign='center';
+      ctx.fillText('💬',px,py-r*1.65);
     }
 
-    // Working blink
-    if(this.state==='working'&&Math.floor(Date.now()/600)%2===0){
-      ctx.fillStyle=dC+'55';
-      ctx.beginPath();ctx.arc(sx,sy,r*0.3,0,Math.PI*2);ctx.fill();
-    }
-
-    this._hx=sx-r;this._hy=sy-r;this._hr=r*2;
+    this._hx=px-r*0.9;this._hy=py-r*1.5;this._hr=r*1.8;
+    this._hw=r*1.8;
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CANVAS & CAMERA
+// CANVAS + CAMERA
 // ═══════════════════════════════════════════════════════════════════════════
 const canvas=document.getElementById('map-canvas');
 const ctx=canvas.getContext('2d');
 let W=0,H=0,camX=0,camY=0,camScale=1;
+let mapData=null,agentObjs=[],selAgent=null;
 
-function resizeCanvas(){
-  const el=document.getElementById('office-wrap');
-  W=canvas.width=el.clientWidth;H=canvas.height=el.clientHeight;
-}
+function resizeCanvas(){const el=document.getElementById('office-wrap');W=canvas.width=el.clientWidth;H=canvas.height=el.clientHeight;}
 window.addEventListener('resize',()=>{resizeCanvas();if(mapData)resetView();});
-resizeCanvas();
 
-function adjustZoom(d){camScale=Math.max(0.4,Math.min(3,camScale+d));}
+function adjustZoom(d){camScale=Math.max(0.3,Math.min(4,camScale+d));}
 function resetView(){
   if(!mapData)return;
-  const tw=mapData.mapW*RST,th=mapData.mapH*RST;
-  camScale=Math.min(W/tw,H/th)*0.92;
-  camX=(W-tw*camScale)/2; camY=(H-th*camScale)/2;
+  resizeCanvas();
+  const tw=mapData.mapW*RS,th=mapData.mapH*RS;
+  camScale=Math.min(W/tw,H/th)*1.8;
+  camX=(W-tw*camScale)/2;camY=(H-th*camScale)/2;
 }
 
-// ─── DRAG & SCROLL ─────────────────────────────────────────────────────────
-let drag=false,ds={x:0,y:0},cs={x:0,y:0};
-canvas.addEventListener('mousedown',e=>{drag=true;ds={x:e.clientX,y:e.clientY};cs={x:camX,y:camY};});
-window.addEventListener('mousemove',e=>{if(drag){camX=cs.x+(e.clientX-ds.x);camY=cs.y+(e.clientY-ds.y);}});
+let drag=false,ds={x:0,y:0},cs0={x:0,y:0};
+canvas.addEventListener('mousedown',e=>{drag=true;ds={x:e.clientX,y:e.clientY};cs0={x:camX,y:camY};});
+window.addEventListener('mousemove',e=>{if(drag){camX=cs0.x+(e.clientX-ds.x);camY=cs0.y+(e.clientY-ds.y);}});
 window.addEventListener('mouseup',e=>{
   if(drag&&Math.hypot(e.clientX-ds.x,e.clientY-ds.y)<5){
-    const r=canvas.getBoundingClientRect();
-    handleClick(e.clientX-r.left,e.clientY-r.top);
+    const r=canvas.getBoundingClientRect();handleClick(e.clientX-r.left,e.clientY-r.top);
   }
   drag=false;
 });
 canvas.addEventListener('wheel',e=>{
   e.preventDefault();
-  const delta=e.deltaY>0?-0.12:0.12;
-  const old=camScale; camScale=Math.max(0.3,Math.min(3,camScale+delta));
+  const old=camScale;camScale=Math.max(0.3,Math.min(4,camScale+(e.deltaY>0?-0.1:0.1)));
   const r=canvas.getBoundingClientRect();
-  const mx=e.clientX-r.left,my=e.clientY-r.top;
-  camX=mx-(mx-camX)*(camScale/old);camY=my-(my-camY)*(camScale/old);
+  camX=(e.clientX-r.left)-(((e.clientX-r.left)-camX)*(camScale/old));
+  camY=(e.clientY-r.top)-(((e.clientY-r.top)-camY)*(camScale/old));
 },{passive:false});
 
 function handleClick(mx,my){
-  let hit=null;
+  // Convert screen coords to world coords
+  const wx=(mx-camX)/camScale, wy=(my-camY)/camScale;
+  let hit=null, bestDist=Infinity;
   for(const ag of agentObjs){
-    if(ag._hx&&mx>ag._hx&&mx<ag._hx+ag._hr&&my>ag._hy&&my<ag._hy+ag._hr){hit=ag;break;}
+    const dx=wx-ag.wx, dy=wy-ag.wy;
+    const dist=Math.hypot(dx,dy);
+    if(dist<20/camScale && dist<bestDist){
+      bestDist=dist; hit=ag;
+    }
   }
-  if(hit)showPanel(hit);else closePanel();
+  if(hit) showPanel(hit); else closePanel();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RENDER LOOP
 // ═══════════════════════════════════════════════════════════════════════════
-let mapData=null, agentObjs=[], selAgent=null;
-
-function renderMap(){
-  if(!mapData)return;
-  const {map,mapW,mapH,rooms,furnitures}=mapData;
-
-  // Visible tile range
-  const x0=Math.max(0,Math.floor(-camX/(RST*camScale)));
-  const y0=Math.max(0,Math.floor(-camY/(RST*camScale)));
-  const x1=Math.min(mapW,Math.ceil((W-camX)/(RST*camScale)));
-  const y1=Math.min(mapH,Math.ceil((H-camY)/(RST*camScale)));
-
-  // Floor/terrain pass
-  for(let ty=y0;ty<y1;ty++){
-    for(let tx=x0;tx<x1;tx++){
-      const t=map[ty]?.[tx]??TILE.EMPTY;
-      const sx=camX+tx*RST*camScale, sy=camY+ty*RST*camScale;
-      const ss=RST*camScale;
-
-      if(t===TILE.EMPTY){ctx.fillStyle='#1a2410';ctx.fillRect(sx,sy,ss,ss);continue;}
-
-      // Draw base tile
-      if(tilesLoaded){
-        const def=TILE_DEFS[t]||TILE_DEFS[TILE.GRASS];
-        if(def){
-          const img=IMGS[def.sheet];
-          if(img) ctx.drawImage(img,def.sx,def.sy,def.sw,def.sh,sx,sy,ss,ss);
-        }
-      } else {
-        drawTile(ctx,t,sx,sy);
-      }
-
-      // Room tint
-      if(t===TILE.FLOOR){
-        const room=rooms.find(r=>tx>=r.rx&&tx<r.rx+r.rw&&ty>=r.ry&&ty<r.ry+r.rh);
-        if(room){ctx.fillStyle=dc(room.dept)+'08';ctx.fillRect(sx,sy,ss,ss);}
-      }
-    }
-  }
-
-  // Furniture pass
-  furnitures.forEach(({sprite,tx,ty})=>{
-    const def=SPRITE_DEFS[sprite]; if(!def) return;
-    const sx=camX+tx*RST*camScale, sy=camY+ty*RST*camScale;
-    const sw=def.tw*RST*camScale, sh=def.th*RST*camScale;
-    if(sx+sw<0||sx>W||sy+sh<0||sy>H) return;
-    if(tilesLoaded){
-      const img=IMGS[def.sheet];
-      if(img) ctx.drawImage(img,def.sx,def.sy,def.sw,def.sh,sx,sy,sw,sh);
-    } else {
-      ctx.fillStyle='#7a5a3a';ctx.fillRect(sx,sy,sw,sh);
-    }
-  });
-
-  // Room labels
-  rooms.forEach(r=>{
-    const dC=dc(r.dept);
-    const lx=camX+(r.rx+r.rw/2)*RST*camScale;
-    const ly=camY+(r.ry+0.8)*RST*camScale;
-    ctx.font=`bold ${Math.max(9,11*camScale)}px 'Courier New'`;
-    ctx.textAlign='center';
-    ctx.fillStyle='rgba(5,6,11,0.7)';
-    const tw=ctx.measureText(r.dept).width+14;
-    ctx.fillRect(lx-tw/2,ly-12,tw,14);
-    ctx.fillStyle=dC;ctx.fillText(r.dept.toUpperCase(),lx,ly-1);
-  });
-
-  // Agents (sorted by Y)
-  agentObjs.sort((a,b)=>a.wy-b.wy).forEach(ag=>{ag.draw(ctx,camX,camY,camScale,selAgent);});
-
-  // Minimap
-  const mm=3,mx=W-mapW*mm-12,my=H-mapH*mm-12;
-  ctx.fillStyle='rgba(5,6,11,0.85)';ctx.fillRect(mx-2,my-2,mapW*mm+4,mapH*mm+4);
-  for(let y=0;y<mapH;y++) for(let x=0;x<mapW;x++){
-    const t=map[y]?.[x]??TILE.EMPTY;
-    const room=rooms.find(r=>x>=r.rx&&x<r.rx+r.rw&&y>=r.ry&&y<r.ry+r.rh);
-    const rc=room?dc(room.dept):'#222';
-    ctx.fillStyle=t===TILE.WALL||t===TILE.WALL_H||t===TILE.WALL_V?'#3a3a5a':
-      t===TILE.FLOOR?'#2a2a3a':t===TILE.GRASS||t===TILE.TREE?'#1a3010':
-      t===TILE.PATH?'#2a2a2a':t===TILE.DESK?rc+'99':'#111';
-    ctx.fillRect(mx+x*mm,my+y*mm,mm,mm);
-  }
-  agentObjs.forEach(ag=>{
-    ctx.fillStyle=dc(ag.dept);
-    ctx.beginPath();ctx.arc(mx+(ag.wx/RST)*mm,my+(ag.wy/RST)*mm,1.5,0,Math.PI*2);ctx.fill();
-  });
-  // Viewport indicator
-  ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=0.8;
-  ctx.strokeRect(mx+(-camX/(RST*camScale))*mm,my+(-camY/(RST*camScale))*mm,(W/(RST*camScale))*mm,(H/(RST*camScale))*mm);
-}
-
 let lastT=0;
 function loop(ts){
   const dt=Math.min(ts-lastT,50);lastT=ts;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#1a2410';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#5a8a30';ctx.fillRect(0,0,W,H);
 
-  if(!mapData||agentObjs.length===0){
-    ctx.fillStyle='#2a3a1a';ctx.font='12px Courier New';ctx.textAlign='center';
-    ctx.fillText('Cargando oficina desde Confluence…',W/2,H/2);
+  if(!mapData){
+    ctx.fillStyle='#8aba50';ctx.font='bold 13px Courier New';ctx.textAlign='center';
+    ctx.fillText('⟳ Cargando oficina…',W/2,H/2);
     requestAnimationFrame(loop);return;
   }
 
-  renderMap();
-  agentObjs.forEach(ag=>ag.update(dt,agentObjs));
+  const {map,mapW,mapH,rooms,furniture}=mapData;
+
+  // Camera transform
+  ctx.save();
+  ctx.translate(camX,camY);
+  ctx.scale(camScale,camScale);
+
+  // Visible range
+  const x0=Math.max(0,Math.floor(-camX/(RS*camScale)));
+  const y0=Math.max(0,Math.floor(-camY/(RS*camScale)));
+  const x1=Math.min(mapW,Math.ceil((W-camX)/(RS*camScale)));
+  const y1=Math.min(mapH,Math.ceil((H-camY)/(RS*camScale)));
+
+  // 1. Base tiles
+  for(let ty=y0;ty<y1;ty++){
+    for(let tx=x0;tx<x1;tx++){
+      const t=map[ty]?.[tx]??T.VOID;
+      if(t===T.VOID) continue;
+      const room=rooms.find(r=>tx>=r.offX&&tx<r.offX+r.rw&&ty>=r.offY&&ty<r.offY+r.rh);
+      drawTile(ctx,t,tx*RS,ty*RS,room?dc(room.dept):null);
+    }
+  }
+
+  // 2. Furniture (draw on top of floor, sorted by Y)
+  furniture
+    .filter(f=>f.tx>=x0&&f.tx<=x1&&f.ty>=y0&&f.ty<=y1)
+    .sort((a,b)=>a.ty-b.ty)
+    .forEach(f=>drawFurniture(ctx,f.type,f.tx*RS,f.ty*RS));
+
+  // 3. Room labels
+  rooms.forEach(r=>{
+    const dC=dc(r.dept);
+    const lx=(r.offX+r.rw/2)*RS, ly=(r.offY+1)*RS+8;
+    ctx.font='bold 9px Courier New';ctx.textAlign='center';
+    const tw=ctx.measureText(r.dept).width+14;
+    ctx.fillStyle='rgba(5,6,11,0.82)';ctx.beginPath();ctx.roundRect(lx-tw/2,ly-9,tw,12,2);ctx.fill();
+    ctx.fillStyle=dC;ctx.fillText(r.dept.toUpperCase(),lx,ly);
+  });
+
+  // 4. Agents (sorted by Y for depth)
+  agentObjs.sort((a,b)=>a.wy-b.wy).forEach(ag=>{
+    ag.update(dt,agentObjs);
+    ag.draw(ctx,selAgent);
+    // Name when zoomed
+    if(camScale>1.2||(selAgent&&selAgent.nombre===ag.nombre)){
+      const dC=dc(ag.dept);
+      const nm=ag.nombre.length>14?ag.nombre.slice(0,13)+'…':ag.nombre;
+      ctx.font=`bold ${Math.max(7,8)}px Courier New`;
+      const tw=ctx.measureText(nm).width+8;
+      ctx.fillStyle='rgba(5,6,11,0.88)';ctx.strokeStyle=dC+'88';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.roundRect(ag.wx-tw/2,ag.wy+12,tw,11,2);ctx.stroke();ctx.fill();
+      ctx.fillStyle=(selAgent&&selAgent.nombre===ag.nombre)?dC:'#8890b0';
+      ctx.textAlign='center';ctx.fillText(nm,ag.wx,ag.wy+20);
+    }
+  });
+
+  ctx.restore();
+
+  // Minimap
+  const mm=3,mx2=W-mapW*mm-10,my2=H-mapH*mm-10;
+  ctx.fillStyle='rgba(5,6,11,0.88)';ctx.fillRect(mx2-2,my2-2,mapW*mm+4,mapH*mm+4);
+  for(let y=0;y<mapH;y++)for(let x=0;x<mapW;x++){
+    const t=map[y]?.[x]??T.VOID;if(t===T.VOID)continue;
+    const room=rooms.find(r=>x>=r.offX&&x<r.offX+r.rw&&y>=r.offY&&y<r.offY+r.rh);
+    ctx.fillStyle=
+      t===T.FLOOR||t===T.FLOOR2?'#2a2a3a':
+      BLOCKED.has(t)?(room?dc(room.dept)+'cc':'#333'):
+      t===T.PATH?'#3a3a2a':'#1a3010';
+    ctx.fillRect(mx2+x*mm,my2+y*mm,mm,mm);
+  }
+  agentObjs.forEach(ag=>{
+    ctx.fillStyle=dc(ag.dept);
+    ctx.beginPath();ctx.arc(mx2+(ag.wx/RS)*mm,my2+(ag.wy/RS)*mm,1.5,0,Math.PI*2);ctx.fill();
+  });
+  ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=0.8;
+  ctx.strokeRect(mx2+(-camX/(RS*camScale))*mm,my2+(-camY/(RS*camScale))*mm,(W/(RS*camScale))*mm,(H/(RS*camScale))*mm);
+
   requestAnimationFrame(loop);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// INIT
+// GAME LOGIC
 // ═══════════════════════════════════════════════════════════════════════════
 let confluenceAgents=[];
 
 function initWorld(){
-  const depts=[...new Set(confluenceAgents.map(a=>a.departamento||''))].filter(Boolean);
-  if(!depts.length)return;
+  let depts=[...new Set(confluenceAgents.map(a=>a.departamento||''))].filter(Boolean);
+  if(!depts.length) depts=['Cargas','Datos','Apps','Back','Sistemas','Front'];
   mapData=buildMap(depts);
-  agentObjs=[];
-  confluenceAgents.forEach(ag=>{
+  agentObjs=confluenceAgents.map(ag=>{
     const room=mapData.rooms.find(r=>r.dept===(ag.departamento||''));
-    if(room) agentObjs.push(new Agent(ag,room,mapData));
-  });
-  resetView();
-  buildDeptNav();
-  updateLive();
+    return room?new Agent(ag,room,mapData):null;
+  }).filter(Boolean);
+  resetView();buildDeptNav();updateLive();
 }
 
-// Panel
-let selAgent=null;
 function showPanel(ag){
   selAgent=ag;
   const dC=dc(ag.dept);
-  const ap=document.getElementById('ap');
-  ap.style.borderColor=dC+'88';
+  document.getElementById('ap').style.borderColor=dC+'88';
   document.getElementById('ap-dept').style.color=dC;
   document.getElementById('ap-dept').textContent=(ag.dept||'Sin dpto').toUpperCase();
   document.getElementById('ap-name').textContent=ag.nombre;
   document.getElementById('ap-persona').textContent='👤 '+(ag.persona||'—');
   document.getElementById('ap-desc').textContent=ag.descripcion||'';
-  const stL={idle:'💤 Inactivo',walking:'🚶 Caminando',working:'💻 Trabajando',chatting:'💬 Charlando'};
-  const stEl=document.getElementById('ap-status');
-  stEl.textContent=stL[ag.state]||'';stEl.style.color=dC;
+  const sl={idle:'💤 Inactivo',walking:'🚶 Caminando',working:'💻 Trabajando',chatting:'💬 Charlando'};
+  const se=document.getElementById('ap-status');se.textContent=sl[ag.state]||'';se.style.color=dC;
   const lk=document.getElementById('ap-link');
   if(ag.url){lk.href=ag.url;lk.style.display='inline';}else lk.style.display='none';
-  ap.classList.add('on');
+  document.getElementById('ap').classList.add('on');
   camX=W/2-ag.wx*camScale;camY=H/2-ag.wy*camScale;
 }
 function closePanel(){selAgent=null;document.getElementById('ap').classList.remove('on');}
@@ -692,14 +796,13 @@ function buildDeptNav(){
     const c=dc(d),cnt=confluenceAgents.filter(a=>a.departamento===d).length;
     return`<button class="dept-btn" style="--dc:${c}" onclick="focusDept('${esc(d)}')">
       <div class="d-dot" style="background:${c}"></div>
-      <div class="d-name">${esc(d)}</div>
-      <span class="d-cnt">${cnt}</span>
+      <div class="d-name">${esc(d)}</div><span class="d-cnt">${cnt}</span>
     </button>`;
   }).join('');
 }
 function focusDept(dept){
   const r=mapData?.rooms.find(r=>r.dept===dept);if(!r)return;
-  camX=W/2-(r.rx+r.rw/2)*RST*camScale;camY=H/2-(r.ry+r.rh/2)*RST*camScale;
+  camX=W/2-(r.offX+r.rw/2)*RS*camScale;camY=H/2-(r.offY+r.rh/2)*RS*camScale;
   document.querySelectorAll('.dept-btn').forEach(b=>b.classList.toggle('active',b.querySelector('.d-name')?.textContent===dept));
 }
 function updateLive(){
@@ -707,7 +810,6 @@ function updateLive(){
   document.getElementById('live-txt').textContent=`${confluenceAgents.length} agentes · ${d} depts`;
 }
 
-// WS
 let ws,retryT;
 function connect(){
   ws=new WebSocket(`ws://${location.host}`);
@@ -715,20 +817,21 @@ function connect(){
   ws.onopen=()=>{b.textContent='⬤ conectado';b.className='ok';clearTimeout(retryT);};
   ws.onmessage=e=>{
     const m=JSON.parse(e.data);
-    if(m.type==='confluence_agents'&&m.agents.length){confluenceAgents=m.agents;initWorld();}
+    if(m.type==='confluence_agents'&&m.agents?.length){confluenceAgents=m.agents;initWorld();}
+    if(m.type==='init'&&m.confluenceAgents?.length){confluenceAgents=m.confluenceAgents;initWorld();}
   };
   ws.onclose=()=>{b.textContent='⬤ desconectado';b.className='err';retryT=setTimeout(connect,3000);};
 }
 async function loadAgents(){
-  try{const r=await fetch('/api/confluence-agents');const d=await r.json();if(d.length){confluenceAgents=d;initWorld();}}catch{}
+  try{const r=await fetch('/api/confluence-agents');const d=await r.json();if(d.length){confluenceAgents=d;initWorld();}}
+  catch(e){console.error('loadAgents',e);}
 }
 
-// Chat
 let chatHist=[],loading=false;
 function pushMsg(role,content,name,color,isErr){
   const w=document.getElementById('messages'),d=document.createElement('div');
   d.className=`msg ${role}`;
-  if(role==='assistant'){d.innerHTML=`<div class="msg-meta"><div class="msg-av" style="background:${(color||'#1c2035')}33;border:1px solid ${color||'#2a3050'}55">🏢</div><span class="msg-who" style="color:${color||'#1adb8a'}">${name||'Oficina'}</span></div><div class="msg-body${isErr?' msg-err':''}">${esc(content)}</div>`;}
+  if(role==='assistant'){d.innerHTML=`<div class="msg-meta"><div class="msg-av" style="background:${(color||'#1c2035')}33">🏢</div><span class="msg-who" style="color:${color||'#1adb8a'}">${name||'Oficina'}</span></div><div class="msg-body${isErr?' msg-err':''}">${esc(content)}</div>`;}
   else{d.innerHTML=`<div class="msg-body">${esc(content)}</div>`;}
   w.appendChild(d);w.scrollTop=w.scrollHeight;return d;
 }
@@ -753,8 +856,14 @@ document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter'
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
 
 // Boot
-pushMsg('assistant','👋 Oficina Virtual VisualNacert\n\nLos agentes IA se mueven solos. 🖱 Arrastra · Rueda zoom · Clic en agente.','Oficina','#1adb8a');
-loadTilesets().then(()=>{ loadAgents(); connect(); });
+pushMsg('assistant','👋 Oficina Virtual VisualNacert\n\nLos agentes se mueven solos.\n🖱 Arrastra · Rueda zoom · Clic en agente','Oficina','#1adb8a');
+setTimeout(()=>{
+  resizeCanvas();
+  Promise.all([
+    loadSH('v','/assets/tilesets/village.png'),
+    loadSH('g','/assets/tilesets/grasslands.png'),
+  ]).then(()=>{initWorld();loadAgents();connect();});
+},80);
 requestAnimationFrame(loop);
 </script>
 </body>
